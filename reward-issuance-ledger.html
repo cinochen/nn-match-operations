@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>活动发奖记录 · 财务对账</title>
+  <style>
+    :root {
+      --ink: #152630;
+      --muted: #6f828d;
+      --muted-2: #91a1aa;
+      --canvas: #f4f7f8;
+      --panel: #ffffff;
+      --panel-2: #f5faf8;
+      --line: #dce7eb;
+      --line-soft: rgba(43, 76, 89, .11);
+      --mint: #229978;
+      --mint-dark: #e5f5ef;
+      --orange: #d76d38;
+      --blue: #317cae;
+      --purple: #735bc2;
+      --danger: #d65f5f;
+      --shadow: 0 22px 70px rgba(42, 69, 80, .10);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 80% -10%, rgba(126, 228, 192, .16), transparent 32%),
+        radial-gradient(circle at 10% 90%, rgba(117, 186, 246, .08), transparent 32%),
+        var(--canvas);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      letter-spacing: .01em;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 238px; padding: 26px 16px 20px; border-right: 1px solid var(--line-soft);
+      background: rgba(255, 255, 255, .9); display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 28px; }
+    .brand-mark { width: 33px; height: 33px; border-radius: 10px; background: var(--mint); color: #ffffff; display: grid; place-items: center; font-weight: 900; box-shadow: 0 0 24px rgba(34,153,120,.18); }
+    .brand b { display: block; font-size: 15px; letter-spacing: .08em; }
+    .brand span { color: var(--muted); font-size: 11px; margin-top: 4px; display: block; }
+    .nav-label { color: #93a4ac; font-size: 11px; letter-spacing: .15em; padding: 0 12px 10px; text-transform: uppercase; }
+    .nav a { color: var(--muted); display: flex; align-items: center; gap: 11px; padding: 12px; margin: 3px 0; border-radius: 11px; text-decoration: none; font-size: 14px; }
+    .nav a:hover { color: var(--ink); background: rgba(255,255,255,.045); }
+    .nav a.active { color: #176c55; background: linear-gradient(90deg, rgba(126,228,192,.22), rgba(126,228,192,.06)); box-shadow: inset 2px 0 var(--mint); }
+    .nav-icon { width: 17px; color: currentColor; text-align: center; font-size: 15px; }
+    .side-foot { margin-top: auto; border-top: 1px solid var(--line-soft); padding: 17px 11px 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .side-foot strong { color: var(--ink); font-size: 13px; display: block; }
+    .main { flex: 1; min-width: 0; padding: 24px 34px 44px; max-width: 1660px; margin: 0 auto; width: 100%; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .crumb { color: var(--muted); font-size: 13px; }
+    .crumb b { color: var(--ink); font-weight: 500; }
+    .top-actions { display: flex; align-items: center; gap: 14px; }
+    .sync { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 7px; }
+    .sync i { width: 6px; height: 6px; background: var(--mint); border-radius: 50%; box-shadow: 0 0 10px var(--mint); }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: #223d49; display: grid; place-items: center; color: var(--mint); font-weight: 700; font-size: 11px; border: 1px solid rgba(126,228,192,.3); }
+    .intro { display: flex; justify-content: space-between; align-items: end; margin-bottom: 23px; }
+    h1 { font-size: clamp(25px, 3vw, 35px); letter-spacing: -.045em; margin: 0; font-weight: 650; line-height: 1.15; }
+    .intro p { color: var(--muted); margin: 10px 0 0; font-size: 14px; }
+    .title-accent { color: var(--mint); }
+    .notice { color: var(--muted); font-size: 12px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.72); }
+    .stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-bottom: 22px; }
+    .stat { background: linear-gradient(135deg, rgba(255,255,255,.98), rgba(248,252,251,.95)); border: 1px solid var(--line); border-radius: var(--radius); padding: 17px 18px; position: relative; overflow: hidden; }
+    .stat:after { content: ""; position: absolute; right: -20px; top: -28px; width: 90px; height: 90px; border: 1px solid rgba(126,228,192,.18); border-radius: 50%; }
+    .stat-label { color: var(--muted); font-size: 13px; display: flex; align-items: center; justify-content: space-between; }
+    .stat-label span { color: var(--mint); font-size: 17px; }
+    .stat-value { font-size: 30px; font-weight: 650; letter-spacing: -.04em; margin-top: 13px; }
+    .stat-sub { font-size: 12px; color: var(--muted-2); margin-top: 5px; }
+    .workspace { background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; }
+    .filters { padding: 20px; border-bottom: 1px solid var(--line); }
+    .filter-row { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; gap: 8px; min-width: 210px; }
+    .field.prize { min-width: 238px; }
+    .field label { color: var(--muted); font-size: 13px; }
+    .field label em { color: var(--orange); font-style: normal; margin-left: 3px; }
+    .input-wrap { position: relative; }
+    input, select { width: 100%; height: 42px; border: 1px solid #cddde2; border-radius: 9px; color: var(--ink); background: #ffffff; padding: 0 13px; outline: none; font-size: 14px; transition: border .18s, box-shadow .18s, background .18s; }
+    input::placeholder { color: #9aabb3; }
+    input:focus, select:focus { border-color: rgba(34,153,120,.7); box-shadow: 0 0 0 3px rgba(34,153,120,.1); background: #ffffff; }
+    select:disabled { color: #9aabb3; cursor: not-allowed; background: #f4f7f8; }
+    .search-btn, .export-btn { height: 42px; border-radius: 9px; border: 1px solid transparent; padding: 0 18px; font-size: 13px; font-weight: 650; transition: transform .18s, filter .18s, background .18s; }
+    .search-btn { background: var(--mint); color: #ffffff; box-shadow: 0 7px 18px rgba(34,153,120,.16); }
+    .search-btn:hover, .export-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
+    .reset-btn { height: 42px; border: 0; background: transparent; color: var(--muted); font-size: 13px; padding: 0 9px; }
+    .reset-btn:hover { color: var(--ink); }
+    .hint { color: var(--muted-2); font-size: 12px; margin-top: 13px; }
+    .hint code { color: var(--blue); background: rgba(117,186,246,.1); padding: 2px 5px; border-radius: 4px; }
+    .table-head { display: flex; justify-content: space-between; align-items: center; padding: 17px 20px 14px; }
+    .result-title { display: flex; align-items: baseline; gap: 11px; }
+    .result-title b { font-size: 15px; }
+    .result-title span { color: var(--muted); font-size: 12px; }
+    .export-btn { background: #f4fbf8; border-color: #b9ddd1; color: #177457; display: flex; align-items: center; gap: 8px; }
+    .table-scroll { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 940px; }
+    th { text-align: left; color: #718592; font-weight: 600; font-size: 12px; letter-spacing: .05em; padding: 0 20px 12px; white-space: nowrap; }
+    td { padding: 16px 20px; font-size: 14px; border-top: 1px solid var(--line-soft); white-space: nowrap; }
+    tbody tr { transition: background .16s; }
+    tbody tr:hover { background: rgba(126,228,192,.035); }
+    .prize-cell { display: flex; gap: 10px; align-items: center; min-width: 160px; }
+    .prize-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; font-size: 15px; border: 1px solid transparent; }
+    .prize-icon.cdk { color: var(--orange); background: rgba(255,157,103,.11); border-color: rgba(255,157,103,.2); }
+    .prize-icon.physical { color: var(--blue); background: rgba(117,186,246,.11); border-color: rgba(117,186,246,.2); }
+    .prize-icon.frame { color: var(--purple); background: rgba(187,165,255,.11); border-color: rgba(187,165,255,.2); }
+    .prize-name { font-weight: 550; color: #20333d; font-size: 14px; }
+    .prize-type { color: var(--muted-2); font-size: 12px; margin-top: 3px; }
+    .time { color: #526873; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .user-name { color: #2d424d; }
+    .user-id { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+    .phone { color: #526873; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .phone button { color: var(--blue); background: none; border: 0; padding: 0; font-size: 12px; margin-left: 6px; }
+    .phone button:hover { text-decoration: underline; }
+    .view-btn { color: var(--mint); background: transparent; border: 0; font-size: 13px; padding: 6px 0; }
+    .view-btn:hover { color: #d9fff3; text-decoration: underline; }
+    .empty { text-align: center; padding: 54px 20px; color: var(--muted); display: none; }
+    .empty .empty-mark { font-size: 25px; color: var(--muted-2); margin-bottom: 10px; }
+    .table-foot { padding: 14px 20px; border-top: 1px solid var(--line-soft); color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .tip { color: #66818f; }
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(2,6,9,.66); backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .22s; z-index: 10; }
+    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+    .drawer { position: fixed; z-index: 11; right: 0; top: 0; height: 100%; width: min(440px, 100%); background: #ffffff; border-left: 1px solid var(--line); transform: translateX(100%); transition: transform .28s cubic-bezier(.2,.8,.2,1); box-shadow: -20px 0 65px rgba(42,69,80,.18); padding: 25px 26px; }
+    .drawer.open { transform: translateX(0); }
+    .drawer-top { display: flex; justify-content: space-between; align-items: start; padding-bottom: 21px; border-bottom: 1px solid var(--line); }
+    .drawer-kicker { color: var(--mint); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; margin-bottom: 9px; }
+    .drawer h2 { font-size: 21px; letter-spacing: -.03em; margin: 0; }
+    .close { border: 0; background: #eef4f6; color: var(--muted); width: 30px; height: 30px; border-radius: 8px; font-size: 18px; }
+    .close:hover { color: var(--ink); background: #e3edef; }
+    .detail-block { padding: 21px 0; border-bottom: 1px solid var(--line-soft); }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; }
+    .detail-label { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .detail-value { color: var(--ink); font-size: 14px; line-height: 1.5; word-break: break-all; }
+    .code-box { background: #f1faf7; border: 1px dashed #a8d6c8; color: #177457; padding: 15px; border-radius: 10px; font-family: ui-monospace, monospace; letter-spacing: .08em; font-size: 14px; margin-top: 10px; }
+    .address-box { background: rgba(117,186,246,.07); border: 1px solid rgba(117,186,246,.25); border-radius: 10px; padding: 13px; line-height: 1.7; font-size: 13px; color: #365765; margin-top: 10px; }
+    .frame-box { background: rgba(187,165,255,.08); border: 1px solid rgba(187,165,255,.25); border-radius: 10px; padding: 14px; margin-top: 10px; }
+    .frame-box strong { color: var(--purple); display: block; margin-bottom: 6px; }
+    .frame-box span { color: #5c6080; font-size: 13px; line-height: 1.6; }
+    .toast { position: fixed; left: 50%; bottom: 25px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; color: #082017; background: var(--mint); font-size: 12px; font-weight: 650; padding: 11px 17px; border-radius: 9px; z-index: 30; box-shadow: var(--shadow); transition: opacity .2s, transform .2s; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .spec-view { max-width: 1180px; }
+    .spec-hero { display: flex; justify-content: space-between; align-items: end; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+    .spec-kicker { color: var(--mint); font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 11px; }
+    .spec-hero h1 { font-size: clamp(25px, 3vw, 34px); }
+    .spec-hero h1 span { color: var(--mint); }
+    .spec-hero p { color: var(--muted); font-size: 14px; margin: 11px 0 0; }
+    .spec-meta { display: flex; gap: 10px; flex-wrap: wrap; justify-content: end; }
+    .spec-meta div { min-width: 112px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.72); color: var(--muted); font-size: 12px; }
+    .spec-meta strong { color: var(--ink); display: block; font-size: 13px; margin-top: 3px; }
+    .spec-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; align-items: start; gap: 20px; }
+    .spec-doc { background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+    .spec-section { padding: 23px 25px; border-bottom: 1px solid var(--line-soft); }
+    .spec-section:last-child { border-bottom: 0; }
+    .spec-section h2 { font-size: 17px; margin: 0 0 12px; letter-spacing: -.02em; }
+    .spec-section h2 span { color: var(--mint); font-family: ui-monospace, monospace; font-size: 12px; margin-right: 8px; letter-spacing: .02em; }
+    .spec-section p { color: #526873; line-height: 1.8; font-size: 14px; margin: 0; }
+    .spec-section p + p { margin-top: 8px; }
+    .rule-list { display: grid; gap: 9px; margin-top: 14px; }
+    .rule-item { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 12px 13px; border: 1px solid #e3ecef; border-radius: 10px; background: #fbfdfd; }
+    .rule-no { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; color: #177457; background: #e8f6f0; font-size: 11px; font-weight: 700; }
+    .rule-item strong { color: var(--ink); font-size: 14px; display: block; margin-bottom: 4px; }
+    .rule-item span { color: var(--muted); font-size: 13px; line-height: 1.65; }
+    .spec-table { width: 100%; min-width: 0; margin-top: 14px; }
+    .spec-table th { background: #f6faf9; padding: 11px 13px; color: #607782; font-size: 12px; }
+    .spec-table td { padding: 12px 13px; color: #4b626d; font-size: 13px; white-space: normal; vertical-align: top; line-height: 1.6; }
+    .spec-table td:first-child { color: var(--ink); font-weight: 650; width: 25%; }
+    .code-inline { color: #237ca9; background: #edf6fb; border-radius: 5px; padding: 2px 5px; font-family: ui-monospace, monospace; font-size: 12px; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+    .tag { color: #23715e; background: #eaf7f2; border: 1px solid #c9e8dd; border-radius: 999px; padding: 5px 9px; font-size: 12px; }
+    .acceptance { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; margin-top: 14px; }
+    .acceptance div { color: #516b76; background: #fbfdfd; border: 1px solid #e3ecef; border-radius: 9px; padding: 11px 12px; font-size: 13px; line-height: 1.55; }
+    .acceptance div:before { content: "✓"; color: var(--mint); font-weight: 800; margin-right: 7px; }
+    .spec-aside { position: sticky; top: 20px; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.74); padding: 17px; }
+    .spec-aside-title { color: var(--muted-2); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 12px; }
+    .spec-aside a { display: block; color: var(--muted); text-decoration: none; font-size: 13px; padding: 8px 9px; border-radius: 7px; }
+    .spec-aside a:hover { color: #176c55; background: #eef8f4; }
+    @media (max-width: 900px) { .sidebar { width: 70px; padding: 22px 9px; } .brand { padding: 0 9px 28px; } .brand > div:last-child, .nav-label, .nav a span, .side-foot { display: none; } .nav a { justify-content: center; padding: 13px 8px; } .main { padding: 20px; } .spec-layout { grid-template-columns: 1fr; } .spec-aside { display: none; } }
+    @media (max-width: 640px) { .main { padding: 16px 12px 30px; } .topbar { margin-bottom: 22px; } .sync { display: none; } .intro { display: block; } .notice { display: inline-block; margin-top: 15px; } .stats { grid-template-columns: 1fr 1fr; gap: 8px; } .stat { padding: 13px; } .stat-value { font-size: 22px; } .filters { padding: 15px; } .field, .field.prize { width: 100%; min-width: 0; } .search-btn { flex: 1; } .table-head { padding: 15px; } .table-foot { padding: 12px 15px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">N</div><div><b>NN OPERATIONS</b><span>活动运营管理台</span></div></div>
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="nav">
+        <a href="#"><span class="nav-icon">⌂</span><span>运营概览</span></a>
+        <a href="#"><span class="nav-icon">◈</span><span>活动管理</span></a>
+        <a href="#"><span class="nav-icon">♢</span><span>奖品配置</span></a>
+        <a class="active" href="#" data-view="ledger"><span class="nav-icon">▤</span><span>活动发奖记录</span></a>
+        <a href="#" data-view="spec"><span class="nav-icon">⌑</span><span>需求说明</span></a>
+      </nav>
+      <div class="side-foot"><strong>财务对账中心</strong>数据以发奖记录为准<br/>导出文件包含敏感字段，请妥善保管</div>
+    </aside>
+    <main class="main">
+      <div id="ledgerView" class="view">
+      <div class="topbar"><div class="crumb">运营中心&nbsp; / &nbsp;<b>活动发奖记录</b></div><div class="top-actions"><div class="sync"><i></i>数据已同步 · 10:42</div><div class="avatar">财</div></div></div>
+      <section class="intro"><div><h1>活动发奖<span class="title-accent">记录</span></h1><p>按活动与奖品核对中奖明细，支持全量明文导出。</p></div><div class="notice">当前时区：Asia/Shanghai · GMT+8</div></section>
+      <section class="stats">
+        <div class="stat"><div class="stat-label">历史发放总量 <span>↗</span></div><div class="stat-value" id="statHistory">12,846</div><div class="stat-sub">累计发奖记录</div></div>
+        <div class="stat"><div class="stat-label">昨日发放总量 <span>◷</span></div><div class="stat-value" id="statYesterday">428</div><div class="stat-sub">自然日 00:00 — 24:00</div></div>
+        <div class="stat"><div class="stat-label">今日发放总量 <span>✦</span></div><div class="stat-value" id="statToday">76</div><div class="stat-sub">截至当前时间 · 10:42</div></div>
+      </section>
+      <section class="workspace">
+        <div class="filters">
+          <div class="filter-row">
+            <div class="field"><label for="activityId">活动 ID <em>*</em></label><div class="input-wrap"><input id="activityId" list="activityList" placeholder="请输入活动 ID，如 20250818001" autocomplete="off" /></div></div>
+            <datalist id="activityList"><option value="20250818001">夏日狂欢抽奖</option><option value="20250819002">开学季盲盒</option><option value="20250901003">英雄联盟战力榜</option></datalist>
+            <div class="field prize"><label for="prizeSelect">奖品名称 <span>(可选)</span></label><select id="prizeSelect" disabled><option value="">请先输入活动 ID</option></select></div>
+            <button class="search-btn" id="searchBtn">查询记录</button><button class="reset-btn" id="resetBtn">重置</button>
+          </div>
+          <div class="hint">支持活动 ID 精确匹配。示例：<code>20250818001</code>　选择活动后，可进一步按奖品缩小范围。</div>
+        </div>
+        <div class="table-head"><div class="result-title"><b>发奖记录列表</b><span id="resultCount">共 8 条</span></div><button class="export-btn" id="exportBtn"><span>⇩</span> 导出全部结果（XLS）</button></div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>奖品名称</th><th>中奖时间</th><th>中奖用户昵称</th><th>中奖用户 NN 号</th><th>中奖用户手机号</th><th>操作</th></tr></thead>
+            <tbody id="recordBody"></tbody>
+          </table>
+          <div class="empty" id="emptyState"><div class="empty-mark">⌁</div><div>没有找到匹配的发奖记录</div><small>请调整活动 ID 或奖品筛选条件</small></div>
+        </div>
+        <div class="table-foot"><span id="footText">展示当前活动的全部奖品发放记录</span><span class="tip">手机号默认脱敏 · 点击手机号可查看明文</span></div>
+      </section>
+      </div>
+      <div id="specView" class="view spec-view" hidden>
+        <div class="topbar"><div class="crumb">运营中心&nbsp; / &nbsp;<b>需求说明</b></div><div class="top-actions"><div class="sync"><i></i>文档版本 · V1.0</div><div class="avatar">技</div></div></div>
+        <section class="spec-hero">
+          <div><div class="spec-kicker">PRODUCT REQUIREMENT</div><h1>活动发奖<span>记录 · 需求说明</span></h1><p>面向技术、测试和财务对账人员的功能实现说明。</p></div>
+          <div class="spec-meta"><div>文档类型<strong>后台功能说明</strong></div><div>适用角色<strong>运营 / 财务 / 技术</strong></div></div>
+        </section>
+        <div class="spec-layout">
+          <article class="spec-doc">
+            <section class="spec-section" id="spec-overview"><h2><span>01</span>产品目标</h2><p>在活动管理后台提供活动发奖记录查询与对账能力，帮助运营和财务按活动、奖品快速核对中奖明细，并将完整结果导出为 XLS 文件留档。</p><div class="tag-row"><span class="tag">查询与筛选</span><span class="tag">奖品联动</span><span class="tag">明细查看</span><span class="tag">全量导出</span></div></section>
+            <section class="spec-section" id="spec-filter"><h2><span>02</span>查询与筛选规则</h2><div class="rule-list"><div class="rule-item"><div class="rule-no">1</div><div><strong>活动 ID 精确查询</strong><span>输入活动 ID 后点击“查询记录”，仅允许匹配已存在的活动。活动 ID 为空或不存在时，提示“请输入有效的活动 ID”，不发起查询。</span></div></div><div class="rule-item"><div class="rule-no">2</div><div><strong>奖品名称联动</strong><span>活动 ID 输入有效后，奖品名称下拉框解除禁用，并加载该活动下的全部奖品；活动 ID 发生变化时，奖品选项同步刷新。</span></div></div><div class="rule-item"><div class="rule-no">3</div><div><strong>筛选结果范围</strong><span>只按活动 ID 查询时，展示该活动下全部奖品的发放记录；同时选择奖品名称时，仅展示该活动下该奖品的全部发放记录。</span></div></div></div></section>
+            <section class="spec-section" id="spec-list"><h2><span>03</span>发奖记录列表</h2><p>列表默认按照中奖时间倒序展示，最新中奖记录排在最前；默认手机号脱敏。列表表头及字段定义如下：</p><table class="spec-table"><thead><tr><th>字段</th><th>展示规则</th><th>数据要求</th></tr></thead><tbody><tr><td>奖品名称</td><td>展示中奖奖品名称，支持区分 CDK、实物、头框等类型。</td><td>必填，文本。</td></tr><tr><td>中奖时间</td><td>格式为“年月日 时分”，示例：2025-08-18 21:42。</td><td>必填，作为首要排序字段。</td></tr><tr><td>中奖用户昵称</td><td>展示用户当前昵称。</td><td>必填，文本。</td></tr><tr><td>中奖用户 NN 号</td><td>展示用户唯一 NN 号。</td><td>必填，建议按字符串处理。</td></tr><tr><td>中奖用户手机号</td><td>默认展示前三位 + **** + 后四位；点击“查看”后展示明文。</td><td>必填；导出时必须为明文。</td></tr><tr><td>操作</td><td>展示“查看详情”按钮，点击后打开详情抽屉。</td><td>根据奖品类型展示对应详情。</td></tr><tr><td>排序规则</td><td>默认按中奖时间降序（DESC）；当中奖时间相同时，按发奖记录 ID 降序作为兜底排序，保证列表顺序稳定。</td><td>接口建议支持 sortField、sortOrder 参数。</td></tr><tr><td>分页规则</td><td>默认每页 20 条，初始进入第 1 页；展示总条数、当前页码、上一页/下一页和页码跳转。</td><td>切换活动、奖品或点击重置后，页码重置为第 1 页。</td></tr></tbody></table><p>导出不受分页限制，始终导出当前筛选条件下的全部结果。</p></section>
+            <section class="spec-section" id="spec-detail"><h2><span>04</span>详情抽屉规则</h2><div class="rule-list"><div class="rule-item"><div class="rule-no">A</div><div><strong>CDK 奖品</strong><span>展示 CDK 明文。仅在点击“查看详情”后显示，不在列表中直接暴露。</span></div></div><div class="rule-item"><div class="rule-no">B</div><div><strong>实物奖品</strong><span>展示收货地址。用户未填写地址时显示“地址为空（用户未填写收货地址）”，发放状态标记为“待补充地址”。</span></div></div><div class="rule-item"><div class="rule-no">C</div><div><strong>头框奖品</strong><span>展示头框名称、有效期和发放渠道等头框信息。</span></div></div></div></section>
+            <section class="spec-section" id="spec-export"><h2><span>05</span>导出规则</h2><p>用户点击“导出全部结果（XLS）”后，导出当前筛选结果的全部数据，不受分页影响。</p><table class="spec-table"><thead><tr><th>项目</th><th>要求</th></tr></thead><tbody><tr><td>文件格式</td><td>Excel 兼容的 <span class="code-inline">.xls</span> 文件。</td></tr><tr><td>导出范围</td><td>当前活动 ID + 奖品筛选条件下的全部结果。</td></tr><tr><td>导出表头</td><td>奖品名称、中奖时间、中奖用户昵称、中奖用户 NN 号、中奖用户手机号。</td></tr><tr><td>敏感字段</td><td>中奖用户手机号导出为明文；页面内仍默认脱敏展示。</td></tr><tr><td>空结果</td><td>无匹配记录时不可导出，并提示“暂无可导出的记录”。</td></tr></tbody></table></section>
+            <section class="spec-section" id="spec-acceptance"><h2><span>06</span>验收标准</h2><div class="acceptance"><div>输入有效活动 ID 后，奖品名称下拉框联动刷新。</div><div>仅按活动 ID 查询时，结果覆盖该活动全部奖品。</div><div>按活动 + 奖品查询时，只返回该奖品全部发放记录。</div><div>手机号默认脱敏，点击查看可显示明文并支持收起。</div><div>不同奖品类型打开详情后展示对应信息。</div><div>导出文件包含全部当前结果，手机号为明文且表头准确。</div></div></section>
+          </article>
+          <aside class="spec-aside"><div class="spec-aside-title">Document Index</div><a href="#spec-overview">01 · 产品目标</a><a href="#spec-filter">02 · 查询与筛选</a><a href="#spec-list">03 · 列表字段</a><a href="#spec-detail">04 · 详情规则</a><a href="#spec-export">05 · 导出规则</a><a href="#spec-acceptance">06 · 验收标准</a></aside>
+        </div>
+      </div>
+    </main>
+  </div>
+  <div class="drawer-backdrop" id="backdrop"></div>
+  <aside class="drawer" id="drawer"><div class="drawer-top"><div><div class="drawer-kicker">ISSUANCE DETAIL</div><h2 id="drawerTitle">奖品详情</h2></div><button class="close" id="closeDrawer">×</button></div><div id="drawerContent"></div></aside>
+  <div class="toast" id="toast"></div>
+  <script>
+    const activities = {
+      '20250818001': { name: '夏日狂欢抽奖', prizes: ['夏日限定头像框', '京东购物卡 100 元', '夏日清凉礼包'] },
+      '20250819002': { name: '开学季盲盒', prizes: ['限定盲盒 · 青春版', 'QQ 音乐月卡', '校园头像框'] },
+      '20250901003': { name: '英雄联盟战力榜', prizes: ['峡谷征服者头框', '游戏周边礼盒'] }
+    };
+    const records = [
+      { id: 1, activity: '20250818001', prize: '夏日限定头像框', type: 'frame', icon: '✦', time: '2025-08-18 21:42', nick: '一颗柠檬糖', nn: 'NN_10298431', phone: '13810293847', frame: '夏日限定头像框', frameInfo: '有效期：永久 · 发放渠道：站内' },
+      { id: 2, activity: '20250818001', prize: '京东购物卡 100 元', type: 'cdk', icon: '⌘', time: '2025-08-18 20:16', nick: '月亮邮差', nn: 'NN_72840915', phone: '18601928374', cdk: 'JD100-8K4P-2V9M-Q7X1' },
+      { id: 3, activity: '20250818001', prize: '夏日清凉礼包', type: 'physical', icon: '▣', time: '2025-08-18 19:58', nick: '风吹麦浪', nn: 'NN_49018273', phone: '15122093821', address: '上海市浦东新区世纪大道 100 号 · 李** · 151****3821' },
+      { id: 4, activity: '20250818001', prize: '夏日限定头像框', type: 'frame', icon: '✦', time: '2025-08-18 19:31', nick: '芒果冰沙', nn: 'NN_63170429', phone: '13918742066', frame: '夏日限定头像框', frameInfo: '有效期：永久 · 发放渠道：站内' },
+      { id: 5, activity: '20250819002', prize: '限定盲盒 · 青春版', type: 'physical', icon: '▣', time: '2025-08-19 23:06', nick: '南风知我意', nn: 'NN_85019234', phone: '13718824590', address: '' },
+      { id: 6, activity: '20250819002', prize: 'QQ 音乐月卡', type: 'cdk', icon: '⌘', time: '2025-08-19 22:41', nick: '椰子海', nn: 'NN_21938470', phone: '18017364211', cdk: 'QQMUSIC-30D-4Y8F-6M2A' },
+      { id: 7, activity: '20250901003', prize: '峡谷征服者头框', type: 'frame', icon: '✦', time: '2025-09-01 18:12', nick: '不吃香菜', nn: 'NN_90472831', phone: '15800671234', frame: '峡谷征服者头框', frameInfo: '有效期：2026-03-01 · 发放渠道：站内' },
+      { id: 8, activity: '20250901003', prize: '游戏周边礼盒', type: 'physical', icon: '▣', time: '2025-09-01 17:55', nick: '打野不抓人', nn: 'NN_44387120', phone: '13317092346', address: '地址为空（用户未填写收货地址）' }
+    ];
+    const typeNames = { cdk: 'CDK 虚拟奖品', physical: '实物奖品', frame: '头像框' };
+    let current = [...records];
+    const $ = (id) => document.getElementById(id);
+    const navItems = document.querySelectorAll('.nav a[data-view]');
+    function switchView(viewName) {
+      $('ledgerView').hidden = viewName !== 'ledger';
+      $('specView').hidden = viewName !== 'spec';
+      navItems.forEach(item => item.classList.toggle('active', item.dataset.view === viewName));
+    }
+    navItems.forEach(item => item.addEventListener('click', event => { event.preventDefault(); switchView(item.dataset.view); }));
+    const activityId = $('activityId'), prizeSelect = $('prizeSelect');
+    function maskPhone(phone) { return phone.slice(0, 3) + '****' + phone.slice(-4); }
+    function updatePrizeOptions() {
+      const activity = activities[activityId.value.trim()];
+      prizeSelect.innerHTML = '';
+      if (!activity) { prizeSelect.disabled = true; prizeSelect.innerHTML = '<option value="">请先输入有效的活动 ID</option>'; return; }
+      prizeSelect.disabled = false;
+      prizeSelect.append(new Option('全部奖品', ''));
+      activity.prizes.forEach(p => prizeSelect.append(new Option(p, p)));
+    }
+    function render() {
+      const body = $('recordBody'); body.innerHTML = '';
+      $('resultCount').textContent = `共 ${current.length} 条`;
+      $('footText').textContent = activityId.value.trim() && activities[activityId.value.trim()] ? `${activities[activityId.value.trim()].name} · ${activityId.value.trim()}` : '展示当前活动的全部奖品发放记录';
+      $('emptyState').style.display = current.length ? 'none' : 'block';
+      document.querySelector('table').style.display = current.length ? 'table' : 'none';
+      current.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><div class="prize-cell"><div class="prize-icon ${row.type}">${row.icon}</div><div><div class="prize-name">${row.prize}</div><div class="prize-type">${typeNames[row.type]}</div></div></div></td><td class="time">${row.time}</td><td class="user-name">${row.nick}</td><td class="user-id">${row.nn}</td><td class="phone"><span>${maskPhone(row.phone)}</span><button data-phone="${row.id}">查看</button></td><td><button class="view-btn" data-view="${row.id}">查看详情&nbsp; →</button></td>`;
+        body.appendChild(tr);
+      });
+    }
+    function search() {
+      const aid = activityId.value.trim(), prize = prizeSelect.value;
+      if (!activities[aid]) { showToast('请输入有效的活动 ID'); activityId.focus(); return; }
+      current = records.filter(r => r.activity === aid && (!prize || r.prize === prize)); render(); showToast(`已查询 ${current.length} 条发奖记录`);
+    }
+    function openDrawer(row) {
+      $('drawerTitle').textContent = row.prize;
+      let special = '';
+      if (row.type === 'cdk') special = `<div class="detail-block"><div class="detail-label">CDK 明文</div><div class="code-box">${row.cdk}</div></div>`;
+      if (row.type === 'physical') special = `<div class="detail-block"><div class="detail-label">收货地址</div><div class="address-box">${row.address || '地址为空（用户未填写收货地址）'}</div></div>`;
+      if (row.type === 'frame') special = `<div class="detail-block"><div class="detail-label">头框信息</div><div class="frame-box"><strong>${row.frame}</strong><span>${row.frameInfo}</span></div></div>`;
+      $('drawerContent').innerHTML = `<div class="detail-block"><div class="detail-grid"><div><div class="detail-label">中奖用户</div><div class="detail-value">${row.nick}</div></div><div><div class="detail-label">NN 号</div><div class="detail-value">${row.nn}</div></div><div><div class="detail-label">中奖时间</div><div class="detail-value">${row.time}</div></div><div><div class="detail-label">手机号</div><div class="detail-value">${row.phone}</div></div></div></div>${special}<div class="detail-block"><div class="detail-grid"><div><div class="detail-label">活动 ID</div><div class="detail-value">${row.activity}</div></div><div><div class="detail-label">发放状态</div><div class="detail-value" style="color:var(--mint)">${row.type === 'physical' && !row.address ? '待补充地址' : '已完成'}</div></div></div></div>`;
+      $('drawer').classList.add('open'); $('backdrop').classList.add('open');
+    }
+    function closeDrawer() { $('drawer').classList.remove('open'); $('backdrop').classList.remove('open'); }
+    function showToast(msg) { const toast = $('toast'); toast.textContent = msg; toast.classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => toast.classList.remove('show'), 2200); }
+    function exportXls() {
+      if (!current.length) { showToast('暂无可导出的记录'); return; }
+      const headers = ['奖品名称','中奖时间','中奖用户昵称','中奖用户NN号','中奖用户手机号'];
+      const rows = current.map(r => [r.prize, r.time, r.nick, r.nn, r.phone]);
+      const table = `<table><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>${rows.map(row => `<tr>${row.map(v => `<td>${String(v).replaceAll('&','&amp;').replaceAll('<','&lt;')}</td>`).join('')}</tr>`).join('')}</table>`;
+      const blob = new Blob(['\ufeff', '<html><head><meta charset="UTF-8"></head><body>', table, '</body></html>'], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `活动发奖记录_${activityId.value.trim() || '全部结果'}.xls`; a.click(); URL.revokeObjectURL(url); showToast(`已导出 ${current.length} 条记录，手机号为明文`);
+    }
+    activityId.addEventListener('input', updatePrizeOptions);
+    activityId.addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+    $('searchBtn').addEventListener('click', search);
+    $('resetBtn').addEventListener('click', () => { activityId.value = ''; prizeSelect.innerHTML = '<option value="">请先输入活动 ID</option>'; prizeSelect.disabled = true; current = [...records]; render(); showToast('筛选条件已重置'); });
+    $('exportBtn').addEventListener('click', exportXls);
+    $('recordBody').addEventListener('click', e => { const phone = e.target.dataset.phone, view = e.target.dataset.view; if (phone) { const row = records.find(r => r.id === Number(phone)); e.target.previousElementSibling.textContent = row.phone; e.target.textContent = '收起'; e.target.dataset.phone = ''; e.target.dataset.hide = row.id; } else if (e.target.dataset.hide) { const row = records.find(r => r.id === Number(e.target.dataset.hide)); e.target.previousElementSibling.textContent = maskPhone(row.phone); e.target.textContent = '查看'; e.target.dataset.phone = row.id; delete e.target.dataset.hide; } else if (view) openDrawer(records.find(r => r.id === Number(view))); });
+    $('closeDrawer').addEventListener('click', closeDrawer); $('backdrop').addEventListener('click', closeDrawer); document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+    render();
+  </script>
+</body>
+</html>
