@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="NN 用户积分运营后台：支持单个和批量增加积分，并记录完整操作流水。" />
+  <title>NN 积分运营后台</title>
+  <style>
+    :root {
+      --ink: #142132;
+      --muted: #718097;
+      --muted-2: #9aa7b8;
+      --line: #e6ebf1;
+      --surface: #ffffff;
+      --canvas: #f4f7fa;
+      --nav: #152238;
+      --nav-2: #1c2d49;
+      --teal: #0b9b8a;
+      --teal-dark: #087568;
+      --teal-soft: #e7f7f4;
+      --amber: #e79432;
+      --amber-soft: #fff4e4;
+      --red: #d85e67;
+      --shadow: 0 16px 40px rgba(18, 35, 57, .07);
+      --radius: 18px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-shell { min-height: 100vh; display: flex; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 10;
+      width: 248px;
+      padding: 26px 16px 20px;
+      color: #c8d2e1;
+      background:
+        radial-gradient(circle at 110% 0%, rgba(35, 193, 173, .16), transparent 30%),
+        linear-gradient(160deg, #14243b 0%, #102035 70%, #101c31 100%);
+      overflow-y: auto;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 34px; }
+    .brand-mark {
+      width: 38px; height: 38px; display: grid; place-items: center;
+      color: #fff; font-size: 15px; font-weight: 800; letter-spacing: -.08em;
+      border-radius: 12px 12px 12px 4px;
+      background: linear-gradient(135deg, #14b7a3, #0e756e);
+      box-shadow: 0 8px 18px rgba(10, 177, 157, .2);
+    }
+    .brand-title { color: #fff; font-size: 16px; font-weight: 800; letter-spacing: .02em; }
+    .brand-subtitle { margin-top: 1px; color: #8292a9; font-size: 11px; }
+    .nav-label { padding: 0 12px 10px; color: #63748e; font-size: 11px; font-weight: 700; letter-spacing: .13em; }
+    .nav { display: grid; gap: 5px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px;
+      color: #9eacc0; text-align: left; border: 1px solid transparent; border-radius: 11px;
+      background: transparent; transition: .2s ease;
+    }
+    .nav-item:hover { color: #fff; background: rgba(255,255,255,.05); }
+    .nav-item.active { color: #fff; border-color: rgba(62, 214, 192, .2); background: linear-gradient(90deg, rgba(24, 182, 160, .19), rgba(24, 182, 160, .05)); }
+    .nav-icon { width: 18px; text-align: center; font-size: 16px; opacity: .85; }
+    .nav-submenu { display: grid; gap: 3px; padding: 5px 0 4px 29px; }
+    .nav-subitem { position: relative; width: 100%; padding: 9px 12px; color: #8293aa; font-size: 12px; text-align: left; border: 0; border-left: 1px solid rgba(133, 155, 181, .25); background: transparent; transition: .2s ease; }
+    .nav-subitem::before { content: ""; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; background: transparent; }
+    .nav-subitem:hover { color: #e4f3f1; background: rgba(255,255,255,.04); }
+    .nav-subitem.active { color: #7ee0d0; font-weight: 800; background: rgba(24, 182, 160, .08); }
+    .nav-subitem.active::before { background: #29b9a5; }
+    .sidebar-footer { margin-top: 48px; padding: 16px 12px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; background: rgba(255,255,255,.035); }
+    .user-mini { display: flex; align-items: center; gap: 10px; }
+    .avatar { display: grid; place-items: center; width: 32px; height: 32px; color: #fff; font-size: 12px; font-weight: 800; border-radius: 50%; background: #3972a8; }
+    .user-mini strong { display: block; color: #ecf4ff; font-size: 12px; }
+    .user-mini span { display: block; margin-top: 2px; color: #798ba5; font-size: 10px; }
+
+    .main { width: calc(100% - 248px); min-width: 0; margin-left: 248px; }
+    .topbar { height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 42px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.8); backdrop-filter: blur(12px); }
+    .breadcrumbs { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
+    .breadcrumbs strong { color: var(--ink); font-weight: 700; }
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .icon-button { width: 34px; height: 34px; display: grid; place-items: center; color: var(--muted); border: 1px solid transparent; border-radius: 10px; background: transparent; }
+    .icon-button:hover { color: var(--ink); border-color: var(--line); background: var(--surface); }
+    .top-user { display: flex; align-items: center; gap: 8px; padding-left: 8px; border-left: 1px solid var(--line); }
+    .top-user .avatar { width: 28px; height: 28px; font-size: 10px; }
+    .top-user span { color: var(--ink); font-size: 12px; font-weight: 700; }
+
+    .content { max-width: 1510px; margin: 0 auto; padding: 34px 42px 56px; }
+    .page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+    .eyebrow { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--teal); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--teal); }
+    h1 { margin: 0; font-size: clamp(26px, 3vw, 36px); line-height: 1.18; letter-spacing: -.04em; }
+    .page-heading p { margin: 8px 0 0; color: var(--muted); }
+    .heading-meta { display: flex; align-items: center; gap: 12px; padding-top: 12px; }
+    .status-pill { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; color: #2e6a60; font-size: 12px; font-weight: 700; border: 1px solid #bee9e2; border-radius: 100px; background: #effbf9; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #25b49d; box-shadow: 0 0 0 4px rgba(37,180,157,.12); }
+    .date-note { color: var(--muted-2); font-size: 12px; }
+
+    .view-panel[hidden] { display: none; }
+
+    .doc-shell { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .doc-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 28px 30px 25px; color: #fff; background: linear-gradient(125deg, #193654 0%, #203b5e 57%, #0f8178 140%); }
+    .doc-kicker { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 9px; color: #8fe0d4; font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .doc-kicker::before { content: ""; width: 18px; height: 2px; background: #52cbb9; }
+    .doc-hero h2 { margin: 0; font-size: 26px; letter-spacing: -.035em; }
+    .doc-hero p { max-width: 680px; margin: 8px 0 0; color: #b4c8da; font-size: 12px; }
+    .doc-version { flex: none; padding: 8px 11px; color: #d7f6f1; font-size: 11px; font-weight: 800; border: 1px solid rgba(143,224,212,.35); border-radius: 9px; background: rgba(255,255,255,.08); }
+    .doc-layout { display: grid; grid-template-columns: 204px minmax(0, 1fr); }
+    .doc-outline { padding: 24px 18px; border-right: 1px solid var(--line); background: #fbfcfd; }
+    .doc-outline-title { margin: 0 0 13px 10px; color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .doc-outline a { display: block; padding: 8px 10px; color: var(--muted); font-size: 12px; text-decoration: none; border-radius: 8px; }
+    .doc-outline a:hover { color: var(--teal-dark); background: var(--teal-soft); }
+    .doc-outline a:first-of-type { color: var(--teal-dark); font-weight: 800; background: var(--teal-soft); }
+    .doc-content { min-width: 0; padding: 28px 32px 35px; }
+    .doc-meta { display: flex; flex-wrap: wrap; gap: 10px 25px; padding-bottom: 19px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+    .doc-meta-item { color: var(--muted); font-size: 11px; }
+    .doc-meta-item strong { margin-left: 5px; color: var(--ink); font-weight: 800; }
+    .doc-section { scroll-margin-top: 20px; }
+    .doc-section + .doc-section { padding-top: 24px; margin-top: 24px; border-top: 1px solid #edf0f4; }
+    .doc-section h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 10px; color: var(--ink); font-size: 16px; letter-spacing: -.02em; }
+    .doc-section h3::before { content: ""; width: 4px; height: 18px; border-radius: 4px; background: var(--teal); }
+    .doc-section > p { margin: 0; color: #536276; font-size: 12px; line-height: 1.8; }
+    .doc-purpose { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 15px; }
+    .doc-purpose-card { padding: 15px; border: 1px solid #e6edf0; border-radius: 12px; background: #fbfdfd; }
+    .doc-purpose-card strong { display: block; color: var(--teal-dark); font-size: 12px; }
+    .doc-purpose-card span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .module-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 15px; }
+    .module-card { position: relative; min-height: 155px; padding: 17px; overflow: hidden; border: 1px solid #e5ebf0; border-radius: 13px; background: #fff; }
+    .module-card::after { content: ""; position: absolute; right: -22px; bottom: -28px; width: 78px; height: 78px; border: 12px solid rgba(11,155,138,.07); border-radius: 50%; }
+    .module-card:nth-child(2)::after { border-color: rgba(231,148,50,.1); }
+    .module-card:nth-child(3)::after { border-color: rgba(72,112,183,.1); }
+    .module-number { display: grid; place-items: center; width: 27px; height: 27px; margin-bottom: 12px; color: var(--teal-dark); font-size: 11px; font-weight: 800; border-radius: 8px; background: var(--teal-soft); }
+    .module-card:nth-child(2) .module-number { color: #a96918; background: var(--amber-soft); }
+    .module-card:nth-child(3) .module-number { color: #5274a7; background: #edf3fb; }
+    .module-card h4 { margin: 0; font-size: 13px; }
+    .module-card p { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .doc-list { display: grid; gap: 9px; margin: 13px 0 0; padding: 0; list-style: none; }
+    .doc-list li { position: relative; padding-left: 18px; color: #536276; font-size: 12px; line-height: 1.7; }
+    .doc-list li::before { content: ""; position: absolute; top: 8px; left: 2px; width: 6px; height: 6px; border-radius: 50%; background: #9ccfc8; }
+    .logic-list { display: grid; gap: 10px; margin-top: 14px; counter-reset: logic; }
+    .logic-item { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; }
+    .logic-item::before { counter-increment: logic; content: counter(logic); display: grid; place-items: center; width: 25px; height: 25px; color: var(--teal-dark); font-size: 11px; font-weight: 800; border-radius: 8px; background: var(--teal-soft); }
+    .logic-item strong { display: block; color: #304054; font-size: 12px; }
+    .logic-item span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .data-table { width: 100%; min-width: 0; margin-top: 14px; border: 1px solid var(--line); border-radius: 10px; border-spacing: 0; overflow: hidden; }
+    .data-table th, .data-table td { padding: 10px 12px; font-size: 11px; white-space: normal; }
+    .data-table th { color: var(--muted); background: #f8fafb; }
+    .data-table td { color: #536276; }
+
+    .work-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(290px, .55fr); gap: 22px; align-items: start; }
+    .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px 26px 19px; border-bottom: 1px solid var(--line); }
+    .panel-title { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+    .panel-caption { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .mini-label { color: var(--muted-2); font-size: 11px; }
+    .form-body { padding: 23px 26px 26px; }
+    .mode-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 23px; border-radius: 12px; background: #f0f3f6; }
+    .mode-tab { min-width: 102px; padding: 8px 14px; color: var(--muted); font-size: 12px; font-weight: 700; border: 0; border-radius: 9px; background: transparent; transition: .2s ease; }
+    .mode-tab.active { color: var(--ink); background: #fff; box-shadow: 0 2px 8px rgba(18,35,57,.08); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 16px; }
+    .field { min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field-label { display: flex; align-items: center; gap: 5px; margin-bottom: 8px; color: #344154; font-size: 12px; font-weight: 700; }
+    .required { color: var(--red); }
+    .control, .select-control { width: 100%; min-height: 43px; padding: 10px 12px; color: var(--ink); outline: none; border: 1px solid #dce3eb; border-radius: 10px; background: #fbfcfd; transition: .2s ease; }
+    .control::placeholder { color: #b6c0cd; }
+    .control:hover, .select-control:hover { border-color: #b9c6d5; }
+    .control:focus, .select-control:focus { border-color: var(--teal); background: #fff; box-shadow: 0 0 0 3px rgba(11,155,138,.1); }
+    textarea.control { min-height: 96px; resize: vertical; }
+    .input-affix { position: relative; }
+    .input-affix .control { padding-right: 54px; }
+    .input-suffix { position: absolute; top: 50%; right: 13px; color: var(--muted-2); font-size: 12px; transform: translateY(-50%); }
+    .field-help { margin-top: 6px; color: var(--muted-2); font-size: 11px; }
+    .upload-zone { display: flex; align-items: center; gap: 13px; min-height: 108px; padding: 16px; border: 1px dashed #b8dcd7; border-radius: 12px; background: #f4fcfb; transition: .2s ease; }
+    .upload-zone.dragover { border-color: var(--teal); background: #e8f8f5; }
+    .upload-icon { width: 39px; height: 39px; display: grid; place-items: center; flex: none; color: var(--teal); font-size: 19px; border-radius: 11px; background: #dff5f1; }
+    .upload-copy { min-width: 0; }
+    .upload-copy strong { display: block; color: #2a4d4a; font-size: 12px; }
+    .upload-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .upload-link { padding: 0; color: var(--teal-dark); font-size: 11px; font-weight: 800; border: 0; background: transparent; }
+    .file-name { margin-top: 5px; color: var(--teal-dark); font-size: 11px; }
+    .batch-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+    .summary-chip { padding: 4px 8px; color: var(--muted); font-size: 11px; border-radius: 7px; background: #f1f4f7; }
+    .summary-chip strong { color: var(--ink); }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 23px; margin-top: 5px; border-top: 1px solid var(--line); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 16px; font-weight: 700; border: 1px solid transparent; border-radius: 10px; transition: .2s ease; }
+    .btn:active { transform: translateY(1px); }
+    .btn-ghost { color: var(--muted); border-color: #dfe6ee; background: #fff; }
+    .btn-ghost:hover { color: var(--ink); background: #f8fafc; }
+    .btn-primary { color: #fff; border-color: var(--teal); background: linear-gradient(135deg, #12ad9a, #078678); box-shadow: 0 8px 15px rgba(11,155,138,.17); }
+    .btn-primary:hover { border-color: var(--teal-dark); background: linear-gradient(135deg, #0da08f, #06796c); box-shadow: 0 10px 20px rgba(11,155,138,.23); }
+    .btn-small { min-height: 34px; padding: 0 11px; font-size: 12px; }
+
+    .preview-card { padding: 23px; overflow: hidden; color: #e1ebf4; border: 0; background: linear-gradient(145deg, #203a5b 0%, #16283f 72%); box-shadow: 0 16px 32px rgba(17, 35, 58, .18); }
+    .preview-card .mini-label { color: #8fa7bf; }
+    .preview-card .panel-title { color: #fff; }
+    .preview-card .panel-caption { color: #91a5ba; }
+    .preview-head { display: flex; align-items: flex-start; justify-content: space-between; }
+    .spark { width: 36px; height: 36px; display: grid; place-items: center; color: #f5c370; border-radius: 12px; background: rgba(255,255,255,.08); }
+    .preview-total { padding: 20px 0 17px; margin-top: 18px; border-top: 1px solid rgba(255,255,255,.1); border-bottom: 1px solid rgba(255,255,255,.1); }
+    .preview-total span { color: #91a5ba; font-size: 11px; }
+    .preview-total strong { display: block; margin-top: 3px; color: #fff; font-size: 33px; letter-spacing: -.05em; }
+    .preview-total strong em { margin-left: 4px; color: #f5c370; font-size: 13px; font-style: normal; letter-spacing: 0; }
+    .preview-list { display: grid; gap: 13px; padding: 17px 0 3px; }
+    .preview-row { display: flex; align-items: center; gap: 10px; }
+    .preview-avatar { width: 30px; height: 30px; display: grid; place-items: center; flex: none; color: #d4f3ee; font-size: 11px; font-weight: 800; border-radius: 9px; background: rgba(19, 173, 154, .22); }
+    .preview-user { min-width: 0; flex: 1; }
+    .preview-user strong { display: block; overflow: hidden; color: #eff6fc; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .preview-user span { display: block; margin-top: 1px; color: #8ca1b9; font-size: 10px; }
+    .preview-points { color: #f5c370; font-size: 12px; font-weight: 800; }
+    .preview-empty { padding: 20px 0 8px; color: #91a5ba; font-size: 12px; text-align: center; }
+    .tip { display: flex; gap: 9px; padding: 13px; margin-top: 20px; color: #aec0d1; font-size: 11px; border-radius: 11px; background: rgba(255,255,255,.065); }
+    .tip b { color: #f5c370; }
+
+    .records-panel { margin-top: 22px; }
+    .records-panel .panel-header { align-items: center; }
+    .records-tools { display: flex; align-items: center; gap: 8px; }
+    .search-wrap { position: relative; }
+    .search-wrap .control { width: 218px; min-height: 36px; padding-left: 34px; font-size: 12px; background: #fbfcfd; }
+    .search-icon { position: absolute; top: 50%; left: 12px; color: var(--muted-2); transform: translateY(-50%); }
+    .select-control { min-height: 36px; padding: 7px 30px 7px 10px; font-size: 12px; background: #fbfcfd; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 900px; border-collapse: collapse; }
+    th { padding: 13px 26px; color: #8b99aa; font-size: 11px; font-weight: 700; text-align: left; white-space: nowrap; background: #fbfcfd; }
+    td { padding: 14px 26px; color: #405065; font-size: 12px; border-top: 1px solid #edf0f4; white-space: nowrap; }
+    tbody tr:hover { background: #fbfdfd; }
+    .user-cell { display: flex; align-items: center; gap: 9px; }
+    .table-avatar { width: 28px; height: 28px; display: grid; place-items: center; color: #23685e; font-size: 10px; font-weight: 800; border-radius: 8px; background: #dff4ef; }
+    .user-cell strong { display: block; color: var(--ink); font-size: 12px; }
+    .user-cell span { display: block; margin-top: 1px; color: var(--muted-2); font-size: 10px; }
+    .points-plus { color: var(--teal-dark); font-weight: 800; }
+    .reason-tag { display: inline-flex; padding: 4px 8px; color: #64748a; border-radius: 7px; background: #f1f4f7; }
+    .remark-cell { max-width: 220px; overflow: hidden; color: #64748a; text-overflow: ellipsis; white-space: nowrap; }
+    .success-tag { display: inline-flex; align-items: center; gap: 5px; color: #2d907d; font-size: 11px; font-weight: 700; }
+    .success-tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #29b698; }
+    .empty-row td { padding: 32px; color: var(--muted); text-align: center; }
+    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 26px; color: var(--muted-2); font-size: 11px; border-top: 1px solid var(--line); }
+    .page-controls { display: flex; gap: 5px; }
+    .page-btn { width: 28px; height: 28px; color: var(--muted); border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+    .page-btn.current { color: #fff; border-color: var(--teal); background: var(--teal); }
+    .page-btn:disabled { cursor: not-allowed; opacity: .4; }
+
+    .toast { position: fixed; right: 28px; bottom: 28px; z-index: 20; display: flex; align-items: flex-start; gap: 11px; min-width: 280px; max-width: 390px; padding: 15px 17px; color: #fff; border-radius: 13px; background: #19344c; box-shadow: 0 16px 35px rgba(18,35,57,.22); opacity: 0; pointer-events: none; transform: translateY(15px); transition: .25s ease; }
+    .toast.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .toast-icon { width: 24px; height: 24px; display: grid; place-items: center; flex: none; color: #a9f0e3; border-radius: 50%; background: rgba(57, 211, 185, .16); }
+    .toast strong { display: block; font-size: 12px; }
+    .toast span { display: block; margin-top: 2px; color: #a8bdce; font-size: 11px; }
+
+    @media (max-width: 1120px) {
+      .sidebar { width: 215px; }
+      .main { width: calc(100% - 215px); margin-left: 215px; }
+      .topbar, .content { padding-left: 28px; padding-right: 28px; }
+      .work-grid { grid-template-columns: 1fr; }
+      .preview-card { display: none; }
+      .module-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 780px) {
+      .sidebar { position: static; width: 100%; height: auto; padding: 14px 14px 12px; }
+      .app-shell { display: block; }
+      .main { width: 100%; margin-left: 0; }
+      .brand { padding: 0 7px 15px; }
+      .nav-label, .sidebar-footer { display: none; }
+      .nav { display: flex; overflow-x: auto; padding-bottom: 2px; }
+      .nav-group { flex: 0 0 auto; }
+      .nav-item { width: auto; padding: 8px 10px; }
+      .nav-item span:not(.nav-icon) { display: inline; }
+      .nav-submenu { padding: 3px 0 0 12px; }
+      .nav-subitem { width: auto; padding: 6px 10px; }
+      .topbar { height: 58px; padding: 0 18px; }
+      .top-user span, .date-note { display: none; }
+      .content { padding: 24px 18px 38px; }
+      .page-heading { display: block; margin-bottom: 22px; }
+      .heading-meta { padding-top: 16px; }
+      .panel-header, .form-body { padding-left: 17px; padding-right: 17px; }
+      .records-panel .panel-header { display: block; }
+      .records-tools { display: grid; grid-template-columns: 1fr 1fr; margin-top: 15px; }
+      .search-wrap .control { width: 100%; }
+      th, td { padding-left: 17px; padding-right: 17px; }
+      .pagination { padding-left: 17px; padding-right: 17px; }
+      .doc-layout { grid-template-columns: 1fr; }
+      .doc-outline { display: none; }
+      .doc-hero { padding: 23px 18px; }
+      .doc-hero h2 { font-size: 22px; }
+      .doc-content { padding: 23px 17px 28px; }
+      .doc-purpose { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 500px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .form-actions { justify-content: stretch; }
+      .form-actions .btn { flex: 1; }
+      .upload-zone { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">NN</div>
+        <div><div class="brand-title">NN 运营中心</div><div class="brand-subtitle">Nexus Network · Admin</div></div>
+      </div>
+      <nav class="nav" aria-label="主导航">
+        <div class="nav-group">
+          <button class="nav-item active" type="button" data-nav="points"><span class="nav-icon">✦</span><span>NN积分发放管理</span></button>
+          <div class="nav-submenu" role="tablist" aria-label="NN积分发放管理子菜单">
+            <button class="nav-subitem active" type="button" role="tab" aria-selected="true" data-view="operateView">积分发放</button>
+            <button class="nav-subitem" type="button" role="tab" aria-selected="false" data-view="requirementView">需求文档</button>
+          </div>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-mini"><div class="avatar">林</div><div><strong>林序 · 运营管理员</strong><span>今日已操作 18 次</span></div></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>NN运营中心</span><b>›</b><strong>NN积分发放管理</strong></div>
+        <div class="top-actions">
+          <button class="icon-button" type="button" id="helpButton" title="使用说明">?</button>
+          <button class="icon-button" type="button" id="bellButton" title="通知">♧</button>
+          <div class="top-user"><div class="avatar">林</div><span>林序</span></div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow">Points operation</div>
+            <h1>NN积分发放管理</h1>
+            <p>为 NN 用户快速增加积分，所有操作都会自动沉淀为可追溯记录。</p>
+          </div>
+          <div class="heading-meta"><span class="status-pill"><i class="status-dot"></i>服务运行正常</span><span class="date-note" id="currentDate">2026 年 10 月 14 日</span></div>
+        </section>
+
+        <section class="view-panel" id="operateView">
+        <section class="work-grid">
+          <article class="panel" id="grantPanel">
+            <div class="panel-header"><div><h2 class="panel-title">新增积分</h2><p class="panel-caption">选择添加方式并填写本次积分发放信息</p></div><span class="mini-label">操作人：林序</span></div>
+            <div class="form-body">
+              <div class="mode-tabs" role="tablist" aria-label="添加方式">
+                <button class="mode-tab active" type="button" role="tab" aria-selected="true" data-mode="single">单个用户</button>
+                <button class="mode-tab" type="button" role="tab" aria-selected="false" data-mode="batch">批量用户</button>
+              </div>
+
+              <form id="pointsForm" novalidate>
+                <div class="form-grid">
+                  <div class="field single-field"><label class="field-label" for="nnId">NN 号 <span class="required">*</span></label><input class="control" id="nnId" name="nnId" placeholder="请输入用户 NN 号" autocomplete="off" /></div>
+                  <div class="field single-field"><label class="field-label" for="nickname">用户昵称 <span class="required">*</span></label><input class="control" id="nickname" name="nickname" placeholder="请输入用户昵称" autocomplete="off" /></div>
+                  <div class="field batch-field" hidden><label class="field-label" for="batchInput">用户信息 <span class="required">*</span></label><textarea class="control" id="batchInput" placeholder="每行一个用户，格式：NN号,用户昵称&#10;例如：10086231,小鱼干&#10;也支持只填写 NN 号"></textarea><div class="batch-summary" id="batchSummary"><span class="summary-chip">已识别 <strong>0</strong> 位用户</span></div></div>
+                  <div class="field batch-field" hidden><label class="field-label">上传用户文件</label><div class="upload-zone" id="uploadZone"><div class="upload-icon">⇧</div><div class="upload-copy"><strong>拖拽 CSV 文件到这里</strong><span>或 <button class="upload-link" type="button" id="uploadTrigger">点击选择文件</button>，单文件不超过 5MB</span><div class="file-name" id="fileName"></div></div><input type="file" id="fileInput" accept=".csv,.txt" hidden /></div></div>
+                  <div class="field"><label class="field-label" for="points">添加积分 <span class="required">*</span></label><div class="input-affix"><input class="control" id="points" name="points" type="number" min="1" max="999999" placeholder="请输入积分数量" /><span class="input-suffix">积分</span></div><div class="field-help">单次最多添加 999,999 积分</div></div>
+                  <div class="field"><label class="field-label" for="reason">添加原因 <span class="required">*</span></label><select class="select-control" id="reason" name="reason"><option value="">请选择添加原因</option><option>活动奖励</option><option>赛事活动奖励</option><option>客服补偿</option><option>内容贡献</option><option>运营激励</option><option>其他</option></select></div>
+                  <div class="field full"><label class="field-label" for="remark">备注说明 <span style="color:#aab5c2;font-weight:400">（选填）</span></label><input class="control" id="remark" name="remark" maxlength="80" placeholder="补充本次操作的背景信息，便于后续追溯" /></div>
+                </div>
+                <div class="form-actions"><button class="btn btn-ghost" type="button" id="resetButton">重置</button><button class="btn btn-primary" type="submit">✦ <span id="submitText">确认增加积分</span></button></div>
+              </form>
+            </div>
+          </article>
+
+          <aside class="panel preview-card" aria-label="操作预览">
+            <div class="preview-head"><div><h2 class="panel-title">本次操作预览</h2><p class="panel-caption">提交前请确认发放信息</p></div><div class="spark">✦</div></div>
+            <div class="preview-total"><span>预计发放总额</span><strong id="previewTotal">0<em>积分</em></strong></div>
+            <div class="preview-list" id="previewList"><div class="preview-empty">填写用户信息后显示预览</div></div>
+            <div class="tip"><span>⌁</span><div>积分发放后会立即生效，并记录在操作流水中。<b>请谨慎提交。</b></div></div>
+          </aside>
+        </section>
+
+        <section class="panel records-panel" id="recordsPanel">
+          <div class="panel-header"><div><h2 class="panel-title">积分操作记录</h2><p class="panel-caption">共 <span id="recordCount">0</span> 条记录，最新操作优先展示</p></div><div class="records-tools"><div class="search-wrap"><span class="search-icon">⌕</span><input class="control" id="searchInput" placeholder="搜索 NN 号 / 昵称" /></div><select class="select-control" id="statusFilter" aria-label="筛选状态"><option value="all">全部状态</option><option value="success">已成功</option><option value="failed">失败</option></select><button class="btn btn-ghost btn-small" type="button" id="exportButton">导出记录</button></div></div>
+          <div class="table-wrap"><table><thead><tr><th>用户信息</th><th>NN 号</th><th>添加积分</th><th>添加原因</th><th>备注</th><th>添加时间</th><th>操作人</th><th>状态</th></tr></thead><tbody id="recordsBody"></tbody></table></div>
+          <div class="pagination"><span id="paginationText">显示 0 条记录</span><div class="page-controls"><button class="page-btn" type="button" disabled>‹</button><button class="page-btn current" type="button">1</button><button class="page-btn" type="button" disabled>›</button></div></div>
+        </section>
+        </section>
+
+        <section class="view-panel" id="requirementView" hidden>
+          <article class="doc-shell">
+            <div class="doc-hero">
+              <div>
+                <div class="doc-kicker">Product requirement document</div>
+                <h2>NN积分发放管理需求文档</h2>
+                <p>统一管理 NN 用户积分发放动作，支持单个用户和批量用户操作，并形成完整、可查询、可导出的积分发放记录。</p>
+              </div>
+              <div class="doc-version">V1.0 · 需求初稿</div>
+            </div>
+            <div class="doc-layout">
+              <aside class="doc-outline">
+                <p class="doc-outline-title">文档目录</p>
+                <a href="#doc-background">01 背景与目的</a>
+                <a href="#doc-modules">02 功能模块</a>
+                <a href="#doc-content">03 页面内容</a>
+                <a href="#doc-interaction">04 交互说明</a>
+                <a href="#doc-logic">05 功能逻辑</a>
+                <a href="#doc-data">06 数据字段</a>
+              </aside>
+              <div class="doc-content">
+                <div class="doc-meta"><span class="doc-meta-item">需求归属<strong>NN运营中心</strong></span><span class="doc-meta-item">产品负责人<strong>运营团队</strong></span><span class="doc-meta-item">文档状态<strong>待评审</strong></span><span class="doc-meta-item">更新日期<strong id="docUpdateDate">2026-10-14</strong></span></div>
+
+                <section class="doc-section" id="doc-background">
+                  <h3>背景与目的</h3>
+                  <p>当前运营人员需要通过人工方式为 NN 用户补发或奖励积分，操作入口分散，批量处理效率低，且后续难以快速定位“谁在什么时间、因为什么原因发放了多少积分”。因此建设统一的 NN 积分发放管理页面，沉淀标准操作流程与审计记录。</p>
+                  <div class="doc-purpose"><div class="doc-purpose-card"><strong>建设目的</strong><span>提升积分发放效率，降低人工录入和重复操作成本。</span></div><div class="doc-purpose-card"><strong>管理目标</strong><span>让每一笔积分发放都有明确的用户、数量、原因、时间和操作人。</span></div></div>
+                </section>
+
+                <section class="doc-section" id="doc-modules">
+                  <h3>功能模块</h3>
+                  <p>本次需求拆分为三个核心模块，形成“发放—记录—追溯”的闭环。</p>
+                  <div class="module-grid"><div class="module-card"><div class="module-number">01</div><h4>单个用户发放积分</h4><p>运营人员填写单个用户的 NN 号、昵称、积分数量、添加原因和备注，确认后完成发放。</p></div><div class="module-card"><div class="module-number">02</div><h4>批量发放积分</h4><p>支持粘贴多行用户信息或上传 CSV/TXT 文件，为多位用户按统一积分数量批量发放。</p></div><div class="module-card"><div class="module-number">03</div><h4>积分发放记录</h4><p>展示发放流水，支持按 NN 号或用户昵称搜索、按状态筛选，并支持导出记录。</p></div></div>
+                </section>
+
+                <section class="doc-section" id="doc-content">
+                  <h3>页面内容</h3>
+                  <ul class="doc-list"><li><strong>页面标题区：</strong>展示“NN积分发放管理”、功能说明、服务状态和当前日期。</li><li><strong>功能页签：</strong>包含“积分发放”和“需求文档”，点击后切换对应页面内容。</li><li><strong>单个/批量发放区：</strong>通过二级切换选择发放模式，填写用户信息、积分数量、添加原因和备注。</li><li><strong>操作预览区：</strong>实时展示预计发放总积分和待处理用户，帮助运营人员提交前确认。</li><li><strong>积分发放记录区：</strong>展示用户昵称、NN号、积分、原因、备注、时间、操作人和状态。</li></ul>
+                </section>
+
+                <section class="doc-section" id="doc-interaction">
+                  <h3>交互说明</h3>
+                  <ul class="doc-list"><li>点击“积分发放”页签进入实际操作页面，点击“需求文档”页签查看本需求说明。</li><li>单个用户模式展示 NN 号和用户昵称输入框；批量用户模式展示多行输入框和文件上传区域。</li><li>积分数量输入后，右侧操作预览实时计算预计发放总额；批量模式同步显示识别到的用户数量。</li><li>上传 CSV/TXT 后自动读取文件内容并填充批量用户输入框，支持拖拽上传。</li><li>点击“确认增加积分”前进行必填校验；校验失败显示错误提示，校验通过后生成成功记录并清空表单。</li><li>记录列表支持搜索和状态筛选；点击“导出记录”下载包含全部记录字段的 CSV 文件。</li></ul>
+                </section>
+
+                <section class="doc-section" id="doc-logic">
+                  <h3>功能逻辑</h3>
+                  <div class="logic-list"><div class="logic-item"><div><strong>选择发放模式</strong><span>默认进入单个用户模式；切换到批量模式后，单个用户字段隐藏，批量输入和上传区域显示。</span></div></div><div class="logic-item"><div><strong>解析用户信息</strong><span>批量文本按行解析，每行支持“NN号,用户昵称”格式；仅填写 NN 号时，昵称显示为待匹配用户。</span></div></div><div class="logic-item"><div><strong>校验发放参数</strong><span>NN 号、昵称、积分数量、添加原因必填；积分数量必须为 1～999,999 的整数；批量模式至少识别一位用户。</span></div></div><div class="logic-item"><div><strong>生成发放记录</strong><span>提交成功后按用户生成记录，记录统一写入操作时间、操作人、积分数量、添加原因、备注和成功状态。</span></div></div><div class="logic-item"><div><strong>记录查询与导出</strong><span>列表按最新操作优先展示，搜索匹配 NN 号或昵称，导出文件包含页面展示的全部业务字段。</span></div></div></div>
+                </section>
+
+                <section class="doc-section" id="doc-data">
+                  <h3>数据字段</h3>
+                  <table class="data-table"><thead><tr><th>字段</th><th>是否必填</th><th>说明</th></tr></thead><tbody><tr><td>NN号</td><td>是</td><td>用户唯一识别信息，批量模式每行一个。</td></tr><tr><td>用户昵称</td><td>是（单个）</td><td>用于确认用户身份和记录展示。</td></tr><tr><td>添加积分</td><td>是</td><td>本次发放的积分数量，范围 1～999,999。</td></tr><tr><td>添加原因</td><td>是</td><td>活动奖励、赛事活动奖励、客服补偿等预设原因。</td></tr><tr><td>备注</td><td>否</td><td>补充活动名称、补偿背景等追溯信息。</td></tr><tr><td>添加时间 / 操作人 / 状态</td><td>系统生成</td><td>提交成功后自动写入记录。</td></tr></tbody></table>
+                </section>
+              </div>
+            </div>
+          </article>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"><div class="toast-icon">✓</div><div><strong id="toastTitle">操作成功</strong><span id="toastMessage">积分已经成功添加。</span></div></div>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = 'nn-points-operation-records-v1';
+      const initialRecords = [
+        { nickname: '星河漫游', nnId: '10086231', points: 1200, reason: '活动奖励', time: '2026-10-14 15:42', operator: '林序', status: 'success' },
+        { nickname: '一颗小橘子', nnId: '10079520', points: 500, reason: '客服补偿', time: '2026-10-14 14:28', operator: '林序', status: 'success' },
+        { nickname: '不吃香菜', nnId: '10067118', points: 3000, reason: '内容贡献', time: '2026-10-14 13:06', operator: '周宁', status: 'success' },
+        { nickname: '白日梦制造机', nnId: '10052896', points: 800, reason: '运营激励', time: '2026-10-14 11:24', operator: '林序', status: 'success' },
+        { nickname: 'Blue Monday', nnId: '10043812', points: 200, reason: '活动奖励', time: '2026-10-13 18:17', operator: '周宁', status: 'success' }
+      ];
+      let records = loadRecords();
+      let currentMode = 'single';
+      let toastTimer;
+
+      const $ = (selector) => document.querySelector(selector);
+      const $$ = (selector) => [...document.querySelectorAll(selector)];
+      const els = {
+        form: $('#pointsForm'), nnId: $('#nnId'), nickname: $('#nickname'), batchInput: $('#batchInput'), points: $('#points'), reason: $('#reason'), remark: $('#remark'),
+        recordsBody: $('#recordsBody'), searchInput: $('#searchInput'), statusFilter: $('#statusFilter'), recordCount: $('#recordCount'), paginationText: $('#paginationText'),
+        previewTotal: $('#previewTotal'), previewList: $('#previewList'), batchSummary: $('#batchSummary'), fileInput: $('#fileInput'), uploadZone: $('#uploadZone'), fileName: $('#fileName'),
+        toast: $('#toast'), toastTitle: $('#toastTitle'), toastMessage: $('#toastMessage')
+      };
+
+      function loadRecords() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || initialRecords; } catch { return initialRecords; }
+      }
+      function saveRecords() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+      function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[char])); }
+      function formatNumber(value) { return Number(value || 0).toLocaleString('zh-CN'); }
+      function initials(name) { return String(name || '?').trim().slice(0, 1).toUpperCase(); }
+      function nowText() { const now = new Date(); const pad = (n) => String(n).padStart(2, '0'); return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`; }
+      function todayText() { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; }
+
+      function parseUsers(raw) {
+        return String(raw || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean).map((line, index) => {
+          if (index === 0 && /nn\s*号|nnid|用户昵称|nickname/i.test(line)) return null;
+          const parts = line.split(/[,，\t|;]/).map(part => part.trim()).filter(Boolean);
+          const nnId = parts[0] || '';
+          const nickname = parts.slice(1).join(' ') || '待匹配用户';
+          return { nnId, nickname };
+        }).filter(user => user && user.nnId);
+      }
+      function selectedUsers() {
+        if (currentMode === 'single') return els.nnId.value.trim() ? [{ nnId: els.nnId.value.trim(), nickname: els.nickname.value.trim() || '待匹配用户' }] : [];
+        return parseUsers(els.batchInput.value);
+      }
+      function updatePreview() {
+        const users = selectedUsers();
+        const points = Number(els.points.value) || 0;
+        els.previewTotal.innerHTML = `${formatNumber(users.length * points)}<em>积分</em>`;
+        if (!users.length) { els.previewList.innerHTML = '<div class="preview-empty">填写用户信息后显示预览</div>'; }
+        else { els.previewList.innerHTML = users.slice(0, 4).map(user => `<div class="preview-row"><div class="preview-avatar">${escapeHtml(initials(user.nickname))}</div><div class="preview-user"><strong>${escapeHtml(user.nickname)}</strong><span>NN ${escapeHtml(user.nnId)}</span></div><div class="preview-points">+${formatNumber(points)}</div></div>`).join('') + (users.length > 4 ? `<div class="mini-label" style="color:#91a5ba;text-align:center">还有 ${users.length - 4} 位用户…</div>` : ''); }
+        const batchCount = currentMode === 'batch' ? users.length : 0;
+        els.batchSummary.innerHTML = `<span class="summary-chip">已识别 <strong>${batchCount}</strong> 位用户</span><span class="summary-chip">预计发放 <strong>${formatNumber(batchCount * points)}</strong> 积分</span>`;
+      }
+      function renderRecords() {
+        const keyword = els.searchInput.value.trim().toLowerCase();
+        const status = els.statusFilter.value;
+        const filtered = records.filter(item => { const matchText = !keyword || `${item.nnId} ${item.nickname}`.toLowerCase().includes(keyword); const matchStatus = status === 'all' || item.status === status; return matchText && matchStatus; });
+        els.recordCount.textContent = filtered.length;
+        els.paginationText.textContent = `显示 ${filtered.length} 条记录`;
+        if (!filtered.length) { els.recordsBody.innerHTML = '<tr class="empty-row"><td colspan="8">没有找到匹配的操作记录</td></tr>'; return; }
+        els.recordsBody.innerHTML = filtered.map(item => `<tr><td><div class="user-cell"><div class="table-avatar">${escapeHtml(initials(item.nickname))}</div><div><strong>${escapeHtml(item.nickname)}</strong><span>NN 用户</span></div></div></td><td>${escapeHtml(item.nnId)}</td><td><span class="points-plus">+${formatNumber(item.points)}</span></td><td><span class="reason-tag">${escapeHtml(item.reason)}</span></td><td class="remark-cell" title="${escapeHtml(item.remark || '—')}">${escapeHtml(item.remark || '—')}</td><td>${escapeHtml(item.time)}</td><td>${escapeHtml(item.operator || '林序')}</td><td><span class="${item.status === 'success' ? 'success-tag' : 'reason-tag'}">${item.status === 'success' ? '已成功' : '失败'}</span></td></tr>`).join('');
+      }
+      function showToast(title, message, kind = 'success') { clearTimeout(toastTimer); els.toastTitle.textContent = title; els.toastMessage.textContent = message; els.toast.querySelector('.toast-icon').textContent = kind === 'success' ? '✓' : '!'; els.toast.classList.add('show'); toastTimer = setTimeout(() => els.toast.classList.remove('show'), 3600); }
+      function setMode(mode) { currentMode = mode; $$('.mode-tab').forEach(tab => { const active = tab.dataset.mode === mode; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); $$('.single-field').forEach(field => field.hidden = mode !== 'single'); $$('.batch-field').forEach(field => field.hidden = mode !== 'batch'); $('#submitText').textContent = mode === 'single' ? '确认增加积分' : '确认批量增加'; updatePreview(); }
+      function resetForm() { els.form.reset(); els.batchInput.value = ''; els.fileName.textContent = ''; setMode(currentMode); updatePreview(); }
+      function validate() {
+        const users = selectedUsers(); const points = Number(els.points.value); const reason = els.reason.value;
+        if (currentMode === 'single' && !els.nnId.value.trim()) return '请输入用户 NN 号';
+        if (currentMode === 'single' && !els.nickname.value.trim()) return '请输入用户昵称';
+        if (currentMode === 'batch' && !users.length) return '请填写或上传至少一位用户';
+        if (!Number.isInteger(points) || points < 1 || points > 999999) return '积分数量需为 1～999,999 的整数';
+        if (!reason) return '请选择添加原因';
+        return '';
+      }
+      function handleSubmit(event) { event.preventDefault(); const error = validate(); if (error) { showToast('请完善信息', error, 'error'); return; } const users = selectedUsers(); const points = Number(els.points.value); const time = nowText(); const additions = users.map(user => ({ nickname: user.nickname, nnId: user.nnId, points, reason: els.reason.value, remark: els.remark.value.trim(), time, operator: '林序', status: 'success' })); records = [...additions.reverse(), ...records]; saveRecords(); renderRecords(); resetForm(); showToast('操作成功', `已为 ${users.length} 位用户增加 ${formatNumber(users.length * points)} 积分`); }
+      function exportRecords() { const header = ['用户昵称', 'NN号', '添加积分', '添加原因', '备注', '添加时间', '操作人', '状态']; const rows = records.map(item => [item.nickname, item.nnId, item.points, item.reason, item.remark || '', item.time, item.operator, item.status === 'success' ? '已成功' : '失败']); const csv = '\ufeff' + [header, ...rows].map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n'); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `NN积分操作记录_${todayText()}.csv`; link.click(); URL.revokeObjectURL(url); showToast('导出成功', `已导出 ${records.length} 条操作记录`); }
+      function handleFile(file) { if (!file) return; if (file.size > 5 * 1024 * 1024) { showToast('文件过大', 'CSV 文件不能超过 5MB', 'error'); return; } const reader = new FileReader(); reader.onload = () => { els.batchInput.value = String(reader.result || '').replace(/^\ufeff/, ''); els.fileName.textContent = `已载入：${file.name}`; updatePreview(); showToast('文件解析完成', `已读取 ${parseUsers(els.batchInput.value).length} 位用户`); }; reader.readAsText(file, 'UTF-8'); }
+      function setView(viewId) { $$('.nav-subitem').forEach(tab => { const active = tab.dataset.view === viewId; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); $$('.view-panel').forEach(panel => { panel.hidden = panel.id !== viewId; }); }
+
+      els.form.addEventListener('submit', handleSubmit);
+      $$('.mode-tab').forEach(tab => tab.addEventListener('click', () => setMode(tab.dataset.mode)));
+      $$('.nav-subitem').forEach(tab => tab.addEventListener('click', () => setView(tab.dataset.view)));
+      [els.nnId, els.nickname, els.batchInput, els.points].forEach(input => input.addEventListener('input', updatePreview));
+      $('#resetButton').addEventListener('click', resetForm);
+      els.searchInput.addEventListener('input', renderRecords);
+      els.statusFilter.addEventListener('change', renderRecords);
+      $('#exportButton').addEventListener('click', exportRecords);
+      $('#uploadTrigger').addEventListener('click', () => els.fileInput.click());
+      els.fileInput.addEventListener('change', event => handleFile(event.target.files[0]));
+      ['dragenter', 'dragover'].forEach(type => els.uploadZone.addEventListener(type, event => { event.preventDefault(); els.uploadZone.classList.add('dragover'); }));
+      ['dragleave', 'drop'].forEach(type => els.uploadZone.addEventListener(type, event => { event.preventDefault(); els.uploadZone.classList.remove('dragover'); }));
+      els.uploadZone.addEventListener('drop', event => handleFile(event.dataTransfer.files[0]));
+      $('#helpButton').addEventListener('click', () => showToast('使用说明', '单个用户填写 NN 号、昵称；批量模式支持按行填写或上传 CSV 文件。'));
+      $('#bellButton').addEventListener('click', () => showToast('通知中心', '当前没有新的系统通知。'));
+      $$('.nav-item').forEach(item => item.addEventListener('click', () => { $$('.nav-item').forEach(nav => nav.classList.remove('active')); item.classList.add('active'); setView('operateView'); }));
+      $('#currentDate').textContent = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date());
+      $('#docUpdateDate').textContent = todayText();
+      setMode('single'); renderRecords();
+    })();
+  </script>
+</body>
+</html>
