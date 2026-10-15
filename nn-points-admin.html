@@ -167,6 +167,10 @@
     .mode-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 23px; border-radius: 12px; background: #f0f3f6; }
     .mode-tab { min-width: 102px; padding: 8px 14px; color: var(--muted); font-size: 12px; font-weight: 700; border: 0; border-radius: 9px; background: transparent; transition: .2s ease; }
     .mode-tab.active { color: var(--ink); background: #fff; box-shadow: 0 2px 8px rgba(18,35,57,.08); }
+    .batch-switch { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 11px; border-radius: 11px; background: #f0f3f6; }
+    .batch-switch button { min-width: 92px; padding: 7px 12px; color: var(--muted); font-size: 11px; font-weight: 800; border: 0; border-radius: 8px; background: transparent; transition: .2s ease; }
+    .batch-switch button:hover { color: var(--ink); }
+    .batch-switch button.active { color: var(--ink); background: #fff; box-shadow: 0 2px 7px rgba(18,35,57,.08); }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 16px; }
     .field { min-width: 0; }
     .field.full { grid-column: 1 / -1; }
@@ -228,6 +232,8 @@
     .search-wrap { position: relative; }
     .search-wrap .control { width: 218px; min-height: 36px; padding-left: 34px; font-size: 12px; background: #fbfcfd; }
     .search-icon { position: absolute; top: 50%; left: 12px; color: var(--muted-2); transform: translateY(-50%); }
+    .date-range { display: flex; align-items: center; gap: 6px; color: var(--muted-2); font-size: 11px; }
+    .date-range .control { width: 132px; min-height: 36px; padding: 7px 9px; font-size: 11px; background: #fbfcfd; }
     .select-control { min-height: 36px; padding: 7px 30px 7px 10px; font-size: 12px; background: #fbfcfd; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; min-width: 900px; border-collapse: collapse; }
@@ -240,7 +246,6 @@
     .user-cell span { display: block; margin-top: 1px; color: var(--muted-2); font-size: 10px; }
     .points-plus { color: var(--teal-dark); font-weight: 800; }
     .reason-tag { display: inline-flex; padding: 4px 8px; color: #64748a; border-radius: 7px; background: #f1f4f7; }
-    .remark-cell { max-width: 220px; overflow: hidden; color: #64748a; text-overflow: ellipsis; white-space: nowrap; }
     .success-tag { display: inline-flex; align-items: center; gap: 5px; color: #2d907d; font-size: 11px; font-weight: 700; }
     .success-tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #29b698; }
     .empty-row td { padding: 32px; color: var(--muted); text-align: center; }
@@ -285,6 +290,8 @@
       .records-panel .panel-header { display: block; }
       .records-tools { display: grid; grid-template-columns: 1fr 1fr; margin-top: 15px; }
       .search-wrap .control { width: 100%; }
+      .date-range { grid-column: 1 / -1; justify-content: space-between; }
+      .date-range .control { width: calc(50% - 12px); }
       th, td { padding-left: 17px; padding-right: 17px; }
       .pagination { padding-left: 17px; padding-right: 17px; }
       .doc-layout { grid-template-columns: 1fr; }
@@ -358,11 +365,11 @@
                 <div class="form-grid">
                   <div class="field single-field"><label class="field-label" for="nnId">NN 号 <span class="required">*</span></label><input class="control" id="nnId" name="nnId" placeholder="请输入用户 NN 号" autocomplete="off" /></div>
                   <div class="field single-field"><label class="field-label" for="nickname">用户昵称 <span class="required">*</span></label><input class="control" id="nickname" name="nickname" placeholder="请输入用户昵称" autocomplete="off" /></div>
-                  <div class="field batch-field" hidden><label class="field-label" for="batchInput">用户信息 <span class="required">*</span></label><textarea class="control" id="batchInput" placeholder="每行一个用户，格式：NN号,用户昵称&#10;例如：10086231,小鱼干&#10;也支持只填写 NN 号"></textarea><div class="batch-summary" id="batchSummary"><span class="summary-chip">已识别 <strong>0</strong> 位用户</span></div></div>
-                  <div class="field batch-field" hidden><label class="field-label">上传用户文件</label><div class="upload-zone" id="uploadZone"><div class="upload-icon">⇧</div><div class="upload-copy"><strong>拖拽 CSV 文件到这里</strong><span>或 <button class="upload-link" type="button" id="uploadTrigger">点击选择文件</button>，单文件不超过 5MB</span><div class="file-name" id="fileName"></div></div><input type="file" id="fileInput" accept=".csv,.txt" hidden /></div></div>
+                  <div class="field full batch-field" hidden><label class="field-label">批量用户录入方式</label><div class="batch-switch" role="tablist" aria-label="批量用户录入方式"><button class="active" type="button" role="tab" aria-selected="true" data-batch-mode="manual">手动输入</button><button type="button" role="tab" aria-selected="false" data-batch-mode="upload">批量上传</button></div></div>
+                  <div class="field full batch-field batch-manual-field" hidden><label class="field-label" for="batchInput">用户信息 <span class="required">*</span></label><textarea class="control" id="batchInput" placeholder="每行一个用户，格式：NN号,用户昵称&#10;例如：10086231,小鱼干&#10;也支持只填写 NN 号"></textarea><div class="batch-summary" id="batchSummary"><span class="summary-chip">已识别 <strong>0</strong> 位用户</span></div></div>
+                  <div class="field full batch-field batch-upload-field" hidden><label class="field-label">上传用户文件 <span class="required">*</span></label><div class="upload-zone" id="uploadZone"><div class="upload-icon">⇧</div><div class="upload-copy"><strong>拖拽 CSV 文件到这里</strong><span>或 <button class="upload-link" type="button" id="uploadTrigger">点击选择文件</button>，单文件不超过 5MB</span><div class="file-name" id="fileName"></div></div><input type="file" id="fileInput" accept=".csv,.txt" hidden /></div><div class="field-help">文件格式：每行一个用户，支持“NN号,用户昵称”或仅填写 NN 号。</div></div>
                   <div class="field"><label class="field-label" for="points">添加积分 <span class="required">*</span></label><div class="input-affix"><input class="control" id="points" name="points" type="number" min="1" max="999999" placeholder="请输入积分数量" /><span class="input-suffix">积分</span></div><div class="field-help">单次最多添加 999,999 积分</div></div>
-                  <div class="field"><label class="field-label" for="reason">添加原因 <span class="required">*</span></label><select class="select-control" id="reason" name="reason"><option value="">请选择添加原因</option><option>活动奖励</option><option>赛事活动奖励</option><option>客服补偿</option><option>内容贡献</option><option>运营激励</option><option>其他</option></select></div>
-                  <div class="field full"><label class="field-label" for="remark">备注说明 <span style="color:#aab5c2;font-weight:400">（选填）</span></label><input class="control" id="remark" name="remark" maxlength="80" placeholder="补充本次操作的背景信息，便于后续追溯" /></div>
+                  <div class="field"><label class="field-label" for="reason">添加原因 <span class="required">*</span></label><input class="control" id="reason" name="reason" maxlength="80" placeholder="请输入添加原因" /></div>
                 </div>
                 <div class="form-actions"><button class="btn btn-ghost" type="button" id="resetButton">重置</button><button class="btn btn-primary" type="submit">✦ <span id="submitText">确认增加积分</span></button></div>
               </form>
@@ -378,8 +385,8 @@
         </section>
 
         <section class="panel records-panel" id="recordsPanel">
-          <div class="panel-header"><div><h2 class="panel-title">积分操作记录</h2><p class="panel-caption">共 <span id="recordCount">0</span> 条记录，最新操作优先展示</p></div><div class="records-tools"><div class="search-wrap"><span class="search-icon">⌕</span><input class="control" id="searchInput" placeholder="搜索 NN 号 / 昵称" /></div><select class="select-control" id="statusFilter" aria-label="筛选状态"><option value="all">全部状态</option><option value="success">已成功</option><option value="failed">失败</option></select><button class="btn btn-ghost btn-small" type="button" id="exportButton">导出记录</button></div></div>
-          <div class="table-wrap"><table><thead><tr><th>用户信息</th><th>NN 号</th><th>添加积分</th><th>添加原因</th><th>备注</th><th>添加时间</th><th>操作人</th><th>状态</th></tr></thead><tbody id="recordsBody"></tbody></table></div>
+          <div class="panel-header"><div><h2 class="panel-title">增加积分明细</h2><p class="panel-caption">共 <span id="recordCount">0</span> 条明细，按增加时间倒序展示</p></div><div class="records-tools"><div class="search-wrap"><span class="search-icon">⌕</span><input class="control" id="searchInput" placeholder="搜索 NN 号 / 昵称" /></div><div class="date-range" aria-label="增加时间范围"><input class="control" id="startDate" type="date" aria-label="开始时间" /><span>至</span><input class="control" id="endDate" type="date" aria-label="结束时间" /></div></div></div>
+          <div class="table-wrap"><table><thead><tr><th>用户信息</th><th>NN 号</th><th>添加积分</th><th>添加原因</th><th>添加时间</th><th>操作人</th></tr></thead><tbody id="recordsBody"></tbody></table></div>
           <div class="pagination"><span id="paginationText">显示 0 条记录</span><div class="page-controls"><button class="page-btn" type="button" disabled>‹</button><button class="page-btn current" type="button">1</button><button class="page-btn" type="button" disabled>›</button></div></div>
         </section>
         </section>
@@ -390,7 +397,7 @@
               <div>
                 <div class="doc-kicker">Product requirement document</div>
                 <h2>NN积分发放管理需求文档</h2>
-                <p>统一管理 NN 用户积分发放动作，支持单个用户和批量用户操作，并形成完整、可查询、可导出的积分发放记录。</p>
+                <p>统一管理 NN 用户积分发放动作，支持单个用户和批量用户操作，并形成完整、可查询的增加积分明细。</p>
               </div>
               <div class="doc-version">V1.0 · 需求初稿</div>
             </div>
@@ -416,27 +423,27 @@
                 <section class="doc-section" id="doc-modules">
                   <h3>功能模块</h3>
                   <p>本次需求拆分为三个核心模块，形成“发放—记录—追溯”的闭环。</p>
-                  <div class="module-grid"><div class="module-card"><div class="module-number">01</div><h4>单个用户发放积分</h4><p>运营人员填写单个用户的 NN 号、昵称、积分数量、添加原因和备注，确认后完成发放。</p></div><div class="module-card"><div class="module-number">02</div><h4>批量发放积分</h4><p>支持粘贴多行用户信息或上传 CSV/TXT 文件，为多位用户按统一积分数量批量发放。</p></div><div class="module-card"><div class="module-number">03</div><h4>积分发放记录</h4><p>展示发放流水，支持按 NN 号或用户昵称搜索、按状态筛选，并支持导出记录。</p></div></div>
+                  <div class="module-grid"><div class="module-card"><div class="module-number">01</div><h4>单个用户发放积分</h4><p>运营人员填写单个用户的 NN 号、昵称、积分数量和添加原因，确认后完成发放。</p></div><div class="module-card"><div class="module-number">02</div><h4>批量发放积分</h4><p>批量模式下可选择手动输入或批量上传，按统一积分数量为多位用户发放积分。</p></div><div class="module-card"><div class="module-number">03</div><h4>增加积分明细</h4><p>展示增加积分流水，支持按 NN 号、用户昵称和增加时间范围筛选。</p></div></div>
                 </section>
 
                 <section class="doc-section" id="doc-content">
                   <h3>页面内容</h3>
-                  <ul class="doc-list"><li><strong>页面标题区：</strong>展示“NN积分发放管理”、功能说明、服务状态和当前日期。</li><li><strong>功能页签：</strong>包含“积分发放”和“需求文档”，点击后切换对应页面内容。</li><li><strong>单个/批量发放区：</strong>通过二级切换选择发放模式，填写用户信息、积分数量、添加原因和备注。</li><li><strong>操作预览区：</strong>实时展示预计发放总积分和待处理用户，帮助运营人员提交前确认。</li><li><strong>积分发放记录区：</strong>展示用户昵称、NN号、积分、原因、备注、时间、操作人和状态。</li></ul>
+                  <ul class="doc-list"><li><strong>页面标题区：</strong>展示“NN积分发放管理”、功能说明、服务状态和当前日期。</li><li><strong>功能页签：</strong>包含“积分发放”和“需求文档”，点击后切换对应页面内容。</li><li><strong>单个/批量发放区：</strong>通过二级切换选择发放模式；批量模式继续选择“手动输入”或“批量上传”。</li><li><strong>发放字段：</strong>填写用户信息、添加积分和手动输入的添加原因，不再填写备注。</li><li><strong>操作预览区：</strong>实时展示预计发放总积分和待处理用户，帮助运营人员提交前确认。</li><li><strong>增加积分明细区：</strong>展示用户昵称、NN号、积分、原因、增加时间和操作人，并支持关键词与时间范围筛选。</li></ul>
                 </section>
 
                 <section class="doc-section" id="doc-interaction">
                   <h3>交互说明</h3>
-                  <ul class="doc-list"><li>点击“积分发放”页签进入实际操作页面，点击“需求文档”页签查看本需求说明。</li><li>单个用户模式展示 NN 号和用户昵称输入框；批量用户模式展示多行输入框和文件上传区域。</li><li>积分数量输入后，右侧操作预览实时计算预计发放总额；批量模式同步显示识别到的用户数量。</li><li>上传 CSV/TXT 后自动读取文件内容并填充批量用户输入框，支持拖拽上传。</li><li>点击“确认增加积分”前进行必填校验；校验失败显示错误提示，校验通过后生成成功记录并清空表单。</li><li>记录列表支持搜索和状态筛选；点击“导出记录”下载包含全部记录字段的 CSV 文件。</li></ul>
+                  <ul class="doc-list"><li>点击“积分发放”页签进入实际操作页面，点击“需求文档”页签查看本需求说明。</li><li>批量模式默认使用“手动输入”；选择“批量上传”后只显示上传用户文件区域，选择“手动输入”后只显示用户信息输入框。</li><li>积分数量输入后，右侧操作预览实时计算预计发放总额；批量模式同步显示识别到的用户数量。</li><li>上传 CSV/TXT 后自动读取文件内容，解析后参与预览和提交。</li><li>点击“确认增加积分”前进行必填校验；校验失败显示错误提示，校验通过后生成增加积分明细并清空表单。</li><li>增加积分明细支持搜索 NN 号 / 昵称，并通过开始时间、结束时间进行范围筛选。</li></ul>
                 </section>
 
                 <section class="doc-section" id="doc-logic">
                   <h3>功能逻辑</h3>
-                  <div class="logic-list"><div class="logic-item"><div><strong>选择发放模式</strong><span>默认进入单个用户模式；切换到批量模式后，单个用户字段隐藏，批量输入和上传区域显示。</span></div></div><div class="logic-item"><div><strong>解析用户信息</strong><span>批量文本按行解析，每行支持“NN号,用户昵称”格式；仅填写 NN 号时，昵称显示为待匹配用户。</span></div></div><div class="logic-item"><div><strong>校验发放参数</strong><span>NN 号、昵称、积分数量、添加原因必填；积分数量必须为 1～999,999 的整数；批量模式至少识别一位用户。</span></div></div><div class="logic-item"><div><strong>生成发放记录</strong><span>提交成功后按用户生成记录，记录统一写入操作时间、操作人、积分数量、添加原因、备注和成功状态。</span></div></div><div class="logic-item"><div><strong>记录查询与导出</strong><span>列表按最新操作优先展示，搜索匹配 NN 号或昵称，导出文件包含页面展示的全部业务字段。</span></div></div></div>
+                  <div class="logic-list"><div class="logic-item"><div><strong>选择发放模式</strong><span>默认进入单个用户模式；切换到批量模式后，单个用户字段隐藏，并显示批量录入方式。</span></div></div><div class="logic-item"><div><strong>选择批量录入方式</strong><span>选择手动输入时只显示用户信息输入框；选择批量上传时只显示上传用户文件区域。</span></div></div><div class="logic-item"><div><strong>解析用户信息</strong><span>手动输入按行解析；批量上传读取 CSV/TXT 内容，每行支持“NN号,用户昵称”格式；仅填写 NN 号时，昵称显示为待匹配用户。</span></div></div><div class="logic-item"><div><strong>校验发放参数</strong><span>NN 号、昵称、积分数量、添加原因必填；积分数量必须为 1～999,999 的整数；批量模式至少识别一位用户。</span></div></div><div class="logic-item"><div><strong>生成增加积分明细</strong><span>提交成功后按用户生成明细，写入增加时间、操作人、积分数量和添加原因。</span></div></div><div class="logic-item"><div><strong>明细查询</strong><span>列表按最新增加时间优先展示，支持搜索 NN 号或昵称，并按开始时间和结束时间筛选。</span></div></div></div>
                 </section>
 
                 <section class="doc-section" id="doc-data">
                   <h3>数据字段</h3>
-                  <table class="data-table"><thead><tr><th>字段</th><th>是否必填</th><th>说明</th></tr></thead><tbody><tr><td>NN号</td><td>是</td><td>用户唯一识别信息，批量模式每行一个。</td></tr><tr><td>用户昵称</td><td>是（单个）</td><td>用于确认用户身份和记录展示。</td></tr><tr><td>添加积分</td><td>是</td><td>本次发放的积分数量，范围 1～999,999。</td></tr><tr><td>添加原因</td><td>是</td><td>活动奖励、赛事活动奖励、客服补偿等预设原因。</td></tr><tr><td>备注</td><td>否</td><td>补充活动名称、补偿背景等追溯信息。</td></tr><tr><td>添加时间 / 操作人 / 状态</td><td>系统生成</td><td>提交成功后自动写入记录。</td></tr></tbody></table>
+                  <table class="data-table"><thead><tr><th>字段</th><th>是否必填</th><th>说明</th></tr></thead><tbody><tr><td>NN号</td><td>是</td><td>用户唯一识别信息，批量模式每行一个。</td></tr><tr><td>用户昵称</td><td>是（单个）</td><td>用于确认用户身份和明细展示。</td></tr><tr><td>添加积分</td><td>是</td><td>本次增加的积分数量，范围 1～999,999。</td></tr><tr><td>添加原因</td><td>是</td><td>由运营人员手动输入，例如活动奖励、赛事活动奖励。</td></tr><tr><td>增加时间 / 操作人</td><td>系统生成</td><td>提交成功后自动写入增加积分明细。</td></tr></tbody></table>
                 </section>
               </div>
             </div>
@@ -459,13 +466,14 @@
       ];
       let records = loadRecords();
       let currentMode = 'single';
+      let currentBatchMode = 'manual';
       let toastTimer;
 
       const $ = (selector) => document.querySelector(selector);
       const $$ = (selector) => [...document.querySelectorAll(selector)];
       const els = {
-        form: $('#pointsForm'), nnId: $('#nnId'), nickname: $('#nickname'), batchInput: $('#batchInput'), points: $('#points'), reason: $('#reason'), remark: $('#remark'),
-        recordsBody: $('#recordsBody'), searchInput: $('#searchInput'), statusFilter: $('#statusFilter'), recordCount: $('#recordCount'), paginationText: $('#paginationText'),
+        form: $('#pointsForm'), nnId: $('#nnId'), nickname: $('#nickname'), batchInput: $('#batchInput'), points: $('#points'), reason: $('#reason'),
+        recordsBody: $('#recordsBody'), searchInput: $('#searchInput'), startDate: $('#startDate'), endDate: $('#endDate'), recordCount: $('#recordCount'), paginationText: $('#paginationText'),
         previewTotal: $('#previewTotal'), previewList: $('#previewList'), batchSummary: $('#batchSummary'), fileInput: $('#fileInput'), uploadZone: $('#uploadZone'), fileName: $('#fileName'),
         toast: $('#toast'), toastTitle: $('#toastTitle'), toastMessage: $('#toastMessage')
       };
@@ -504,18 +512,20 @@
       }
       function renderRecords() {
         const keyword = els.searchInput.value.trim().toLowerCase();
-        const status = els.statusFilter.value;
-        const filtered = records.filter(item => { const matchText = !keyword || `${item.nnId} ${item.nickname}`.toLowerCase().includes(keyword); const matchStatus = status === 'all' || item.status === status; return matchText && matchStatus; });
+        const startDate = els.startDate.value;
+        const endDate = els.endDate.value;
+        const filtered = records.filter(item => { const recordDate = String(item.time || '').slice(0, 10); const matchText = !keyword || `${item.nnId} ${item.nickname}`.toLowerCase().includes(keyword); const matchDate = (!startDate || recordDate >= startDate) && (!endDate || recordDate <= endDate); return matchText && matchDate; });
         els.recordCount.textContent = filtered.length;
         els.paginationText.textContent = `显示 ${filtered.length} 条记录`;
-        if (!filtered.length) { els.recordsBody.innerHTML = '<tr class="empty-row"><td colspan="8">没有找到匹配的操作记录</td></tr>'; return; }
-        els.recordsBody.innerHTML = filtered.map(item => `<tr><td><div class="user-cell"><div class="table-avatar">${escapeHtml(initials(item.nickname))}</div><div><strong>${escapeHtml(item.nickname)}</strong><span>NN 用户</span></div></div></td><td>${escapeHtml(item.nnId)}</td><td><span class="points-plus">+${formatNumber(item.points)}</span></td><td><span class="reason-tag">${escapeHtml(item.reason)}</span></td><td class="remark-cell" title="${escapeHtml(item.remark || '—')}">${escapeHtml(item.remark || '—')}</td><td>${escapeHtml(item.time)}</td><td>${escapeHtml(item.operator || '林序')}</td><td><span class="${item.status === 'success' ? 'success-tag' : 'reason-tag'}">${item.status === 'success' ? '已成功' : '失败'}</span></td></tr>`).join('');
+        if (!filtered.length) { els.recordsBody.innerHTML = '<tr class="empty-row"><td colspan="6">没有找到匹配的增加积分明细</td></tr>'; return; }
+        els.recordsBody.innerHTML = filtered.map(item => `<tr><td><div class="user-cell"><div class="table-avatar">${escapeHtml(initials(item.nickname))}</div><div><strong>${escapeHtml(item.nickname)}</strong><span>NN 用户</span></div></div></td><td>${escapeHtml(item.nnId)}</td><td><span class="points-plus">+${formatNumber(item.points)}</span></td><td><span class="reason-tag">${escapeHtml(item.reason)}</span></td><td>${escapeHtml(item.time)}</td><td>${escapeHtml(item.operator || '林序')}</td></tr>`).join('');
       }
       function showToast(title, message, kind = 'success') { clearTimeout(toastTimer); els.toastTitle.textContent = title; els.toastMessage.textContent = message; els.toast.querySelector('.toast-icon').textContent = kind === 'success' ? '✓' : '!'; els.toast.classList.add('show'); toastTimer = setTimeout(() => els.toast.classList.remove('show'), 3600); }
-      function setMode(mode) { currentMode = mode; $$('.mode-tab').forEach(tab => { const active = tab.dataset.mode === mode; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); $$('.single-field').forEach(field => field.hidden = mode !== 'single'); $$('.batch-field').forEach(field => field.hidden = mode !== 'batch'); $('#submitText').textContent = mode === 'single' ? '确认增加积分' : '确认批量增加'; updatePreview(); }
-      function resetForm() { els.form.reset(); els.batchInput.value = ''; els.fileName.textContent = ''; setMode(currentMode); updatePreview(); }
+      function setBatchMode(mode) { currentBatchMode = mode; $$('.batch-switch button').forEach(tab => { const active = tab.dataset.batchMode === mode; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); $$('.batch-manual-field').forEach(field => field.hidden = currentMode !== 'batch' || mode !== 'manual'); $$('.batch-upload-field').forEach(field => field.hidden = currentMode !== 'batch' || mode !== 'upload'); updatePreview(); }
+      function setMode(mode) { currentMode = mode; $$('.mode-tab').forEach(tab => { const active = tab.dataset.mode === mode; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); $$('.single-field').forEach(field => field.hidden = mode !== 'single'); $$('.batch-field').forEach(field => field.hidden = mode !== 'batch'); $('#submitText').textContent = mode === 'single' ? '确认增加积分' : '确认批量增加'; setBatchMode(currentBatchMode); updatePreview(); }
+      function resetForm() { els.form.reset(); els.batchInput.value = ''; els.fileInput.value = ''; els.fileName.textContent = ''; setMode(currentMode); updatePreview(); }
       function validate() {
-        const users = selectedUsers(); const points = Number(els.points.value); const reason = els.reason.value;
+        const users = selectedUsers(); const points = Number(els.points.value); const reason = els.reason.value.trim();
         if (currentMode === 'single' && !els.nnId.value.trim()) return '请输入用户 NN 号';
         if (currentMode === 'single' && !els.nickname.value.trim()) return '请输入用户昵称';
         if (currentMode === 'batch' && !users.length) return '请填写或上传至少一位用户';
@@ -523,19 +533,19 @@
         if (!reason) return '请选择添加原因';
         return '';
       }
-      function handleSubmit(event) { event.preventDefault(); const error = validate(); if (error) { showToast('请完善信息', error, 'error'); return; } const users = selectedUsers(); const points = Number(els.points.value); const time = nowText(); const additions = users.map(user => ({ nickname: user.nickname, nnId: user.nnId, points, reason: els.reason.value, remark: els.remark.value.trim(), time, operator: '林序', status: 'success' })); records = [...additions.reverse(), ...records]; saveRecords(); renderRecords(); resetForm(); showToast('操作成功', `已为 ${users.length} 位用户增加 ${formatNumber(users.length * points)} 积分`); }
-      function exportRecords() { const header = ['用户昵称', 'NN号', '添加积分', '添加原因', '备注', '添加时间', '操作人', '状态']; const rows = records.map(item => [item.nickname, item.nnId, item.points, item.reason, item.remark || '', item.time, item.operator, item.status === 'success' ? '已成功' : '失败']); const csv = '\ufeff' + [header, ...rows].map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n'); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `NN积分操作记录_${todayText()}.csv`; link.click(); URL.revokeObjectURL(url); showToast('导出成功', `已导出 ${records.length} 条操作记录`); }
+      function handleSubmit(event) { event.preventDefault(); const error = validate(); if (error) { showToast('请完善信息', error, 'error'); return; } const users = selectedUsers(); const points = Number(els.points.value); const time = nowText(); const additions = users.map(user => ({ nickname: user.nickname, nnId: user.nnId, points, reason: els.reason.value.trim(), time, operator: '林序' })); records = [...additions.reverse(), ...records]; saveRecords(); renderRecords(); resetForm(); showToast('操作成功', `已为 ${users.length} 位用户增加 ${formatNumber(users.length * points)} 积分`); }
       function handleFile(file) { if (!file) return; if (file.size > 5 * 1024 * 1024) { showToast('文件过大', 'CSV 文件不能超过 5MB', 'error'); return; } const reader = new FileReader(); reader.onload = () => { els.batchInput.value = String(reader.result || '').replace(/^\ufeff/, ''); els.fileName.textContent = `已载入：${file.name}`; updatePreview(); showToast('文件解析完成', `已读取 ${parseUsers(els.batchInput.value).length} 位用户`); }; reader.readAsText(file, 'UTF-8'); }
       function setView(viewId) { $$('.nav-subitem').forEach(tab => { const active = tab.dataset.view === viewId; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); $$('.view-panel').forEach(panel => { panel.hidden = panel.id !== viewId; }); }
 
       els.form.addEventListener('submit', handleSubmit);
       $$('.mode-tab').forEach(tab => tab.addEventListener('click', () => setMode(tab.dataset.mode)));
+      $$('.batch-switch button').forEach(tab => tab.addEventListener('click', () => setBatchMode(tab.dataset.batchMode)));
       $$('.nav-subitem').forEach(tab => tab.addEventListener('click', () => setView(tab.dataset.view)));
       [els.nnId, els.nickname, els.batchInput, els.points].forEach(input => input.addEventListener('input', updatePreview));
       $('#resetButton').addEventListener('click', resetForm);
       els.searchInput.addEventListener('input', renderRecords);
-      els.statusFilter.addEventListener('change', renderRecords);
-      $('#exportButton').addEventListener('click', exportRecords);
+      els.startDate.addEventListener('change', renderRecords);
+      els.endDate.addEventListener('change', renderRecords);
       $('#uploadTrigger').addEventListener('click', () => els.fileInput.click());
       els.fileInput.addEventListener('change', event => handleFile(event.target.files[0]));
       ['dragenter', 'dragover'].forEach(type => els.uploadZone.addEventListener(type, event => { event.preventDefault(); els.uploadZone.classList.add('dragover'); }));
