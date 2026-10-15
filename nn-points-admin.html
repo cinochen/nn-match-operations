@@ -236,7 +236,7 @@
     .date-range .control { width: 132px; min-height: 36px; padding: 7px 9px; font-size: 11px; background: #fbfcfd; }
     .select-control { min-height: 36px; padding: 7px 30px 7px 10px; font-size: 12px; background: #fbfcfd; }
     .table-wrap { overflow-x: auto; }
-    table { width: 100%; min-width: 900px; border-collapse: collapse; }
+    table { width: 100%; min-width: 760px; border-collapse: collapse; }
     th { padding: 13px 26px; color: #8b99aa; font-size: 11px; font-weight: 700; text-align: left; white-space: nowrap; background: #fbfcfd; }
     td { padding: 14px 26px; color: #405065; font-size: 12px; border-top: 1px solid #edf0f4; white-space: nowrap; }
     tbody tr:hover { background: #fbfdfd; }
@@ -386,7 +386,7 @@
 
         <section class="panel records-panel" id="recordsPanel">
           <div class="panel-header"><div><h2 class="panel-title">增加积分明细</h2><p class="panel-caption">共 <span id="recordCount">0</span> 条明细，按增加时间倒序展示</p></div><div class="records-tools"><div class="search-wrap"><span class="search-icon">⌕</span><input class="control" id="searchInput" placeholder="搜索 NN 号 / 昵称" /></div><div class="date-range" aria-label="增加时间范围"><input class="control" id="startDate" type="date" aria-label="开始时间" /><span>至</span><input class="control" id="endDate" type="date" aria-label="结束时间" /></div></div></div>
-          <div class="table-wrap"><table><thead><tr><th>用户信息</th><th>NN 号</th><th>添加积分</th><th>添加原因</th><th>添加时间</th><th>操作人</th></tr></thead><tbody id="recordsBody"></tbody></table></div>
+          <div class="table-wrap"><table><thead><tr><th>UID</th><th>添加积分</th><th>添加原因</th><th>添加时间</th><th>操作人</th></tr></thead><tbody id="recordsBody"></tbody></table></div>
           <div class="pagination"><span id="paginationText">显示 0 条记录</span><div class="page-controls"><button class="page-btn" type="button" disabled>‹</button><button class="page-btn current" type="button">1</button><button class="page-btn" type="button" disabled>›</button></div></div>
         </section>
         </section>
@@ -428,7 +428,7 @@
 
                 <section class="doc-section" id="doc-content">
                   <h3>页面内容</h3>
-                  <ul class="doc-list"><li><strong>页面标题区：</strong>展示“NN积分发放管理”、功能说明、服务状态和当前日期。</li><li><strong>功能页签：</strong>包含“积分发放”和“需求文档”，点击后切换对应页面内容。</li><li><strong>单个/批量发放区：</strong>通过二级切换选择发放模式；批量模式继续选择“手动输入”或“批量上传”。</li><li><strong>发放字段：</strong>填写用户信息、添加积分和手动输入的添加原因，不再填写备注。</li><li><strong>操作预览区：</strong>实时展示预计发放总积分和待处理用户，帮助运营人员提交前确认。</li><li><strong>增加积分明细区：</strong>展示用户昵称、NN号、积分、原因、增加时间和操作人，并支持关键词与时间范围筛选。</li></ul>
+                  <ul class="doc-list"><li><strong>页面标题区：</strong>展示“NN积分发放管理”、功能说明、服务状态和当前日期。</li><li><strong>功能页签：</strong>包含“积分发放”和“需求文档”，点击后切换对应页面内容。</li><li><strong>单个/批量发放区：</strong>通过二级切换选择发放模式；批量模式继续选择“手动输入”或“批量上传”。</li><li><strong>发放字段：</strong>填写用户信息、添加积分和手动输入的添加原因，不再填写备注。</li><li><strong>操作预览区：</strong>实时展示预计发放总积分和待处理用户，帮助运营人员提交前确认。</li><li><strong>增加积分明细区：</strong>将用户昵称和 NN 号合并为 UID 展示，同时展示积分、原因、增加时间和操作人，并支持关键词与时间范围筛选。</li></ul>
                 </section>
 
                 <section class="doc-section" id="doc-interaction">
@@ -443,7 +443,7 @@
 
                 <section class="doc-section" id="doc-data">
                   <h3>数据字段</h3>
-                  <table class="data-table"><thead><tr><th>字段</th><th>是否必填</th><th>说明</th></tr></thead><tbody><tr><td>NN号</td><td>是</td><td>用户唯一识别信息，批量模式每行一个。</td></tr><tr><td>用户昵称</td><td>是（单个）</td><td>用于确认用户身份和明细展示。</td></tr><tr><td>添加积分</td><td>是</td><td>本次增加的积分数量，范围 1～999,999。</td></tr><tr><td>添加原因</td><td>是</td><td>由运营人员手动输入，例如活动奖励、赛事活动奖励。</td></tr><tr><td>增加时间 / 操作人</td><td>系统生成</td><td>提交成功后自动写入增加积分明细。</td></tr></tbody></table>
+                  <table class="data-table"><thead><tr><th>字段</th><th>是否必填</th><th>说明</th></tr></thead><tbody><tr><td>UID</td><td>是</td><td>由用户昵称和 NN 号组成，用于识别用户并在明细中统一展示。</td></tr><tr><td>添加积分</td><td>是</td><td>本次增加的积分数量，范围 1～999,999。</td></tr><tr><td>添加原因</td><td>是</td><td>由运营人员手动输入，例如活动奖励、赛事活动奖励。</td></tr><tr><td>增加时间 / 操作人</td><td>系统生成</td><td>提交成功后自动写入增加积分明细。</td></tr></tbody></table>
                 </section>
               </div>
             </div>
@@ -517,8 +517,8 @@
         const filtered = records.filter(item => { const recordDate = String(item.time || '').slice(0, 10); const matchText = !keyword || `${item.nnId} ${item.nickname}`.toLowerCase().includes(keyword); const matchDate = (!startDate || recordDate >= startDate) && (!endDate || recordDate <= endDate); return matchText && matchDate; });
         els.recordCount.textContent = filtered.length;
         els.paginationText.textContent = `显示 ${filtered.length} 条记录`;
-        if (!filtered.length) { els.recordsBody.innerHTML = '<tr class="empty-row"><td colspan="6">没有找到匹配的增加积分明细</td></tr>'; return; }
-        els.recordsBody.innerHTML = filtered.map(item => `<tr><td><div class="user-cell"><div class="table-avatar">${escapeHtml(initials(item.nickname))}</div><div><strong>${escapeHtml(item.nickname)}</strong><span>NN 用户</span></div></div></td><td>${escapeHtml(item.nnId)}</td><td><span class="points-plus">+${formatNumber(item.points)}</span></td><td><span class="reason-tag">${escapeHtml(item.reason)}</span></td><td>${escapeHtml(item.time)}</td><td>${escapeHtml(item.operator || '林序')}</td></tr>`).join('');
+        if (!filtered.length) { els.recordsBody.innerHTML = '<tr class="empty-row"><td colspan="5">没有找到匹配的增加积分明细</td></tr>'; return; }
+        els.recordsBody.innerHTML = filtered.map(item => `<tr><td><div class="user-cell"><div class="table-avatar">${escapeHtml(initials(item.nickname))}</div><div><strong>${escapeHtml(item.nickname)}</strong><span>NN ${escapeHtml(item.nnId)}</span></div></div></td><td><span class="points-plus">+${formatNumber(item.points)}</span></td><td><span class="reason-tag">${escapeHtml(item.reason)}</span></td><td>${escapeHtml(item.time)}</td><td>${escapeHtml(item.operator || '林序')}</td></tr>`).join('');
       }
       function showToast(title, message, kind = 'success') { clearTimeout(toastTimer); els.toastTitle.textContent = title; els.toastMessage.textContent = message; els.toast.querySelector('.toast-icon').textContent = kind === 'success' ? '✓' : '!'; els.toast.classList.add('show'); toastTimer = setTimeout(() => els.toast.classList.remove('show'), 3600); }
       function setBatchMode(mode) { currentBatchMode = mode; $$('.batch-switch button').forEach(tab => { const active = tab.dataset.batchMode === mode; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); $$('.batch-manual-field').forEach(field => field.hidden = currentMode !== 'batch' || mode !== 'manual'); $$('.batch-upload-field').forEach(field => field.hidden = currentMode !== 'batch' || mode !== 'upload'); updatePreview(); }
